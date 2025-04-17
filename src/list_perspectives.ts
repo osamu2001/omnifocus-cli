@@ -21,17 +21,12 @@ function getDefaultName(id: string): string | null {
   }
 }
 
-// @ts-ignore
 const app = Application('OmniFocus');
-// @ts-ignore
 app.includeStandardAdditions = true;
-// @ts-ignore
 const doc = app.defaultDocument;
-// @ts-ignore
 const perspectives = doc.perspectives();
 const lines: string[] = [];
 
-// @ts-ignore
 perspectives.forEach(p => {
   let id, name;
   try {

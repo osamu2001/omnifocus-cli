@@ -92,12 +92,9 @@ function getTaskInfo(task: any): any {
 
 // メイン処理
 const args: string[] = [];
-// @ts-ignore
 if (typeof $.NSProcessInfo !== "undefined") {
-  // @ts-ignore
   const nsArgs = $.NSProcessInfo.processInfo.arguments;
   for (let i = 0; i < nsArgs.count; i++) {
-    // @ts-ignore
     args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
   }
 }
@@ -108,12 +105,9 @@ let result = null;
 if (!taskId) {
   console.log("Usage: show_task.ts [taskId]");
 } else {
-  // @ts-ignore
   const app = Application('OmniFocus');
-  // @ts-ignore
   app.includeStandardAdditions = true;
 
-  // @ts-ignore
   const doc = app.defaultDocument;
   const tasks = doc.flattenedTasks();
   let task = null;
