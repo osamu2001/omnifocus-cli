@@ -90,42 +90,46 @@ function getProjectInfo(project: any): any {
 }
 
 // メイン処理
-const args: string[] = [];
-if (typeof $.NSProcessInfo !== "undefined") {
-  const nsArgs = $.NSProcessInfo.processInfo.arguments;
-  for (let i = 0; i < nsArgs.count; i++) {
-    args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-  }
-}
-
-const projectId = args[4] || null;
-let resultValue = null;
-
-if (!projectId) {
-  console.log("Usage: show_project.jxa [projectId]");
-} else {
-  const app = Application('OmniFocus');
-  app.includeStandardAdditions = true;
-
-  const doc = app.defaultDocument;
-  const projects = doc.flattenedProjects();
-  let project = null;
-  
-  for (let i = 0; i < projects.length; i++) {
-    try {
-      if (projects[i].id() === projectId) {
-        project = projects[i];
-        break;
-      }
-    } catch (e) {}
+function showProjectMain(): any {
+  const args: string[] = [];
+  if (typeof $.NSProcessInfo !== "undefined") {
+    const nsArgs = $.NSProcessInfo.processInfo.arguments;
+    for (let i = 0; i < nsArgs.count; i++) {
+      args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
+    }
   }
 
-  if (!project) {
-    console.log("Project not found: " + projectId);
+  const projectId = args[4] || null;
+  let resultValue = null;
+
+  if (!projectId) {
+    console.log("Usage: show_project.jxa [projectId]");
   } else {
-    const projectInfo = getProjectInfo(project);
-    resultValue = JSON.stringify(projectInfo, null, 2);
+    const app = Application('OmniFocus');
+    app.includeStandardAdditions = true;
+
+    const doc = app.defaultDocument;
+    const projects = doc.flattenedProjects();
+    let project = null;
+  
+    for (let i = 0; i < projects.length; i++) {
+      try {
+        if (projects[i].id() === projectId) {
+          project = projects[i];
+          break;
+        }
+      } catch (e) {}
+    }
+
+    if (!project) {
+      console.log("Project not found: " + projectId);
+    } else {
+      const projectInfo = getProjectInfo(project);
+      resultValue = JSON.stringify(projectInfo, null, 2);
+    }
   }
+  
+  return resultValue;
 }
 
-resultValue;
+showProjectMain();

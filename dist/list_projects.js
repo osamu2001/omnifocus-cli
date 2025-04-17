@@ -62,7 +62,7 @@ function getFullFolderPath(folder) {
     }
 }
 // メイン処理
-function main() {
+function listProjectsMain() {
     const omnifocusApp = Application('OmniFocus');
     omnifocusApp.includeStandardAdditions = true;
     const document = omnifocusApp.defaultDocument;
@@ -108,4 +108,4 @@ function main() {
     }
     return lines.join("\n");
 }
-main();
+listProjectsMain();

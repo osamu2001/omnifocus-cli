@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 
 /**
@@ -21,36 +20,41 @@ function getDefaultName(id: string): string | null {
   }
 }
 
-const app = Application('OmniFocus');
-app.includeStandardAdditions = true;
-const doc = app.defaultDocument;
-const perspectives = doc.perspectives();
-const lines: string[] = [];
+function listPerspectivesMain(): string {
+  const omnifocusApp = Application('OmniFocus');
+  omnifocusApp.includeStandardAdditions = true;
+  const document = omnifocusApp.defaultDocument;
+  const perspectives = document.perspectives();
+  const lines: string[] = [];
 
-perspectives.forEach(p => {
-  let id, name;
-  try {
-    id = p.id();
-    name = p.name();
-    if (name && name !== "") {
-      lines.push(`${id}\t${name}`);
-    } else {
-      const fixedName = getDefaultName(id);
-      if (fixedName) {
-        lines.push(`${id}\t${fixedName}`);
-      }
-    }
-  } catch (e) {
+  perspectives.forEach(p => {
+    let id: string = "";
+    let name: string = "";
     try {
-      const fixedName = getDefaultName(id);
       id = p.id();
-      if (fixedName) {
-        lines.push(`${id}\t${fixedName}`);
+      name = p.name();
+      if (name && name !== "") {
+        lines.push(`${id}\t${name}`);
+      } else {
+        const fixedName = getDefaultName(id);
+        if (fixedName) {
+          lines.push(`${id}\t${fixedName}`);
+        }
       }
-    } catch (e2) {
-      // エラー処理
+    } catch (e) {
+      try {
+        id = p.id();
+        const fixedName = getDefaultName(id);
+        if (fixedName) {
+          lines.push(`${id}\t${fixedName}`);
+        }
+      } catch (e2) {
+        // エラー処理
+      }
     }
-  }
-});
+  });
 
-lines.join("\n");
+  return lines.join("\n");
+}
+
+listPerspectivesMain();

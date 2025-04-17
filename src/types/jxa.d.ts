@@ -70,10 +70,17 @@ interface OmniFocusFolder {
   class(): string;
 }
 
+// OmniFocusのパースペクティブ型定義
+interface OmniFocusPerspective {
+  id(): string;
+  name(): string;
+}
+
 // OmniFocusのドキュメント型定義
 interface OmniFocusDocument {
   flattenedTasks(): OmniFocusTask[];
   flattenedProjects(): OmniFocusProject[];
+  perspectives(): OmniFocusPerspective[];
 }
 
 // OmniFocusアプリケーション型定義

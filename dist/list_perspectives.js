@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 /**
  * パースペクティブIDからデフォルト名を取得します
@@ -19,37 +18,41 @@ function getDefaultName(id) {
         default: return null;
     }
 }
-const app = Application('OmniFocus');
-app.includeStandardAdditions = true;
-const doc = app.defaultDocument;
-const perspectives = doc.perspectives();
-const lines = [];
-perspectives.forEach(p => {
-    let id, name;
-    try {
-        id = p.id();
-        name = p.name();
-        if (name && name !== "") {
-            lines.push(`${id}\t${name}`);
-        }
-        else {
-            const fixedName = getDefaultName(id);
-            if (fixedName) {
-                lines.push(`${id}\t${fixedName}`);
-            }
-        }
-    }
-    catch (e) {
+function listPerspectivesMain() {
+    const omnifocusApp = Application('OmniFocus');
+    omnifocusApp.includeStandardAdditions = true;
+    const document = omnifocusApp.defaultDocument;
+    const perspectives = document.perspectives();
+    const lines = [];
+    perspectives.forEach(p => {
+        let id = "";
+        let name = "";
         try {
-            const fixedName = getDefaultName(id);
             id = p.id();
-            if (fixedName) {
-                lines.push(`${id}\t${fixedName}`);
+            name = p.name();
+            if (name && name !== "") {
+                lines.push(`${id}\t${name}`);
+            }
+            else {
+                const fixedName = getDefaultName(id);
+                if (fixedName) {
+                    lines.push(`${id}\t${fixedName}`);
+                }
             }
         }
-        catch (e2) {
-            // エラー処理
+        catch (e) {
+            try {
+                id = p.id();
+                const fixedName = getDefaultName(id);
+                if (fixedName) {
+                    lines.push(`${id}\t${fixedName}`);
+                }
+            }
+            catch (e2) {
+                // エラー処理
+            }
         }
-    }
-});
-lines.join("\n");
+    });
+    return lines.join("\n");
+}
+listPerspectivesMain();

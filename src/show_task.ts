@@ -90,42 +90,46 @@ function getTaskInfo(task: OmniFocusTask): any {
 }
 
 // メイン処理
-let scriptArgs: string[] = [];
-if (typeof $.NSProcessInfo !== "undefined") {
-  const nsArgs = $.NSProcessInfo.processInfo.arguments;
-  for (let i = 0; i < nsArgs.count; i++) {
-    scriptArgs.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-  }
-}
-
-const taskId = scriptArgs[4] || null;
-let scriptResult = null;
-
-if (!taskId) {
-  console.log("Usage: show_task.ts [taskId]");
-} else {
-  const app = Application('OmniFocus');
-  app.includeStandardAdditions = true;
-
-  const doc = app.defaultDocument;
-  const tasks = doc.flattenedTasks();
-  let task = null;
-  
-  for (let i = 0; i < tasks.length; i++) {
-    try {
-      if (tasks[i].id() === taskId) {
-        task = tasks[i];
-        break;
-      }
-    } catch (e) {}
+function showTaskMain(): any {
+  let scriptArgs: string[] = [];
+  if (typeof $.NSProcessInfo !== "undefined") {
+    const nsArgs = $.NSProcessInfo.processInfo.arguments;
+    for (let i = 0; i < nsArgs.count; i++) {
+      scriptArgs.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
+    }
   }
 
-  if (!task) {
-    console.log("Task not found: " + taskId);
+  const taskId = scriptArgs[4] || null;
+  let scriptResult = null;
+
+  if (!taskId) {
+    console.log("Usage: show_task.ts [taskId]");
   } else {
-    const taskInfo = getTaskInfo(task);
-    scriptResult = JSON.stringify(taskInfo, null, 2);
+    const app = Application('OmniFocus');
+    app.includeStandardAdditions = true;
+
+    const doc = app.defaultDocument;
+    const tasks = doc.flattenedTasks();
+    let task = null;
+    
+    for (let i = 0; i < tasks.length; i++) {
+      try {
+        if (tasks[i].id() === taskId) {
+          task = tasks[i];
+          break;
+        }
+      } catch (e) {}
+    }
+
+    if (!task) {
+      console.log("Task not found: " + taskId);
+    } else {
+      const taskInfo = getTaskInfo(task);
+      scriptResult = JSON.stringify(taskInfo, null, 2);
+    }
   }
+  
+  return scriptResult;
 }
 
-scriptResult;
+showTaskMain();
