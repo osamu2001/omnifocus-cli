@@ -1,12 +1,11 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 ObjC.import('Foundation');
 /**
  * タスクの詳細情報を取得する
- * @param task タスクオブジェクト
+ * @param task OmniFocusタスクオブジェクト
  * @returns タスク情報のオブジェクト
  */
 function getTaskInfo(task) {
@@ -105,15 +104,15 @@ function getTaskInfo(task) {
     return info;
 }
 // メイン処理
-const args = [];
+let scriptArgs = [];
 if (typeof $.NSProcessInfo !== "undefined") {
     const nsArgs = $.NSProcessInfo.processInfo.arguments;
     for (let i = 0; i < nsArgs.count; i++) {
-        args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
+        scriptArgs.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
     }
 }
-const taskId = args[4] || null;
-let result = null;
+const taskId = scriptArgs[4] || null;
+let scriptResult = null;
 if (!taskId) {
     console.log("Usage: show_task.ts [taskId]");
 }
@@ -137,7 +136,7 @@ else {
     }
     else {
         const taskInfo = getTaskInfo(task);
-        result = JSON.stringify(taskInfo, null, 2);
+        scriptResult = JSON.stringify(taskInfo, null, 2);
     }
 }
-result;
+scriptResult;
