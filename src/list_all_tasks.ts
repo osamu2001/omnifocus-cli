@@ -91,9 +91,7 @@ function collectIncompleteTasksRecursive(tasks: any[], parentPath: string, outpu
  */
 function getOmniFocusApp(): any {
     try {
-        // @ts-ignore
         const app = Application('OmniFocus');
-        // @ts-ignore
         app.includeStandardAdditions = true;
         return app;
     } catch (e) {
@@ -105,10 +103,8 @@ function getOmniFocusApp(): any {
 // --- メイン処理 ---
 try {
   const app = getOmniFocusApp();
-  // @ts-ignore
   const doc = app.defaultDocument;
   // プロジェクトをフラットなリストで取得 (フォルダ内のプロジェクトも含む)
-  // @ts-ignore
   const projects = doc.flattenedProjects();
   const output: string[] = [];
 
@@ -163,21 +159,15 @@ try {
   const resultString = output.join("\n");
 
   // ObjCのNSFileHandleを使って標準出力に書き込む
-  // @ts-ignore
   const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
-  // @ts-ignore
   const data = $.NSString.stringWithUTF8String(resultString).dataUsingEncoding($.NSUTF8StringEncoding);
-  // @ts-ignore
   stdout.writeData(data);
 
   // return文は関数内でのみ有効なので削除
 } catch (e) {
   // ObjCのNSFileHandleを使って標準エラー出力に書き込む
-  // @ts-ignore
   const stderr = $.NSFileHandle.fileHandleWithStandardError;
-  // @ts-ignore
   const errorData = $.NSString.stringWithUTF8String(`スクリプトの実行中に予期せぬエラーが発生しました: ${e}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
-  // @ts-ignore
   stderr.writeData(errorData);
 
   // 必要に応じて終了ステータスを設定

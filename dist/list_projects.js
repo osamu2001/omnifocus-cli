@@ -63,16 +63,11 @@ function getFullFolderPath(folder) {
     }
 }
 // メイン処理
-// @ts-ignore
 const app = Application('OmniFocus');
-// @ts-ignore
 app.includeStandardAdditions = true;
-// @ts-ignore
 const doc = app.defaultDocument;
-// @ts-ignore
 const projects = doc.flattenedProjects();
 const lines = [];
-// @ts-ignore
 for (const p of projects) {
     let status = "";
     try {

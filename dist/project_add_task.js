@@ -10,12 +10,9 @@
      */
     function getCommandLineArguments() {
         const args = [];
-        // @ts-ignore
         if (typeof $.NSProcessInfo !== "undefined") {
-            // @ts-ignore
             const nsArgs = $.NSProcessInfo.processInfo.arguments;
             for (let i = 0; i < nsArgs.count; i++) {
-                // @ts-ignore
                 args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
             }
             return args.slice(4);
@@ -69,33 +66,25 @@
     let result = null;
     if (!validateProjectId(projectID) || taskName == null || typeof taskName !== "string" || taskName.trim().length === 0) {
         console.log('Error: Usage: project_add_task.ts <projectID> <taskName>');
-        // @ts-ignore
         $.exit(1);
     }
     else {
         try {
-            // @ts-ignore
             const app = Application('OmniFocus');
-            // @ts-ignore
             app.includeStandardAdditions = true;
-            // @ts-ignore
             const doc = app.defaultDocument;
             const targetProject = findProjectById(doc, projectID);
             if (!targetProject) {
                 console.log('Error: Project not found: ' + projectID);
-                // @ts-ignore
                 $.exit(1);
             }
             else {
-                // @ts-ignore
                 targetProject.tasks.push(app.Task({ name: taskName }));
-                // @ts-ignore
                 $.exit(0);
             }
         }
         catch (e) {
             console.log('Error: ' + e.message);
-            // @ts-ignore
             $.exit(1);
         }
     }
