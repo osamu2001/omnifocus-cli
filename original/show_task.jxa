@@ -1,0 +1,106 @@
+#!/usr/bin/osascript -l JavaScript
+
+ObjC.import('stdlib');
+ObjC.import('Foundation');
+
+function getTaskInfo(task) {
+  if (!task) return null;
+
+  var info = {};
+
+  try { info.id = task.id(); } catch (e) {}
+  try { info.name = task.name(); } catch (e) {}
+  try { info.note = task.note(); } catch (e) {}
+  try { info.completed = task.completed(); } catch (e) {}
+  try { info.flagged = task.flagged(); } catch (e) {}
+
+  try { info.deferDate = task.deferDate(); } catch (e) {}
+  try { info.dueDate = task.dueDate(); } catch (e) {}
+  try { info.creationDate = task.creationDate(); } catch (e) {}
+  try { info.modificationDate = task.modificationDate(); } catch (e) {}
+  try { info.completionDate = task.completionDate(); } catch (e) {}
+
+  try { info.estimatedMinutes = task.estimatedMinutes(); } catch (e) {}
+
+  try { info.repetitionRule = task.repetitionRule(); } catch (e) {}
+
+  try {
+    var containingTask = task.containingTask();
+    info.containingTask = containingTask ? containingTask.id() : null;
+  } catch (e) {}
+
+  try {
+    var containingProject = task.containingProject();
+    info.containingProject = containingProject ? {
+      id: containingProject.id(),
+      name: containingProject.name()
+    } : null;
+  } catch (e) {}
+
+  try {
+    var tags = task.tags();
+    info.tags = [];
+    for (var i = 0; i < tags.length; i++) {
+      try {
+        info.tags.push({
+          id: tags[i].id(),
+          name: tags[i].name()
+        });
+      } catch (e) {}
+    }
+  } catch (e) {}
+
+  try {
+    var subtasks = task.tasks();
+    info.subtasks = [];
+    for (var i = 0; i < subtasks.length; i++) {
+      try {
+        info.subtasks.push({
+          id: subtasks[i].id(),
+          name: subtasks[i].name()
+        });
+      } catch (e) {}
+    }
+  } catch (e) {}
+
+  return info;
+}
+
+var args = [];
+if (typeof $.NSProcessInfo !== "undefined") {
+  var nsArgs = $.NSProcessInfo.processInfo.arguments;
+  for (var i = 0; i < nsArgs.count; i++) {
+    args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
+  }
+}
+
+var taskId = args[4] || null;
+var result = null;
+
+if (!taskId) {
+  console.log("Usage: show_task.jxa [taskId]");
+} else {
+  var app = Application('OmniFocus');
+  app.includeStandardAdditions = true;
+
+  var doc = app.defaultDocument;
+  var tasks = doc.flattenedTasks();
+  var task = null;
+  for (var i = 0; i < tasks.length; i++) {
+    try {
+      if (tasks[i].id() === taskId) {
+        task = tasks[i];
+        break;
+      }
+    } catch (e) {}
+  }
+
+  if (!task) {
+    console.log("Task not found: " + taskId);
+  } else {
+    var taskInfo = getTaskInfo(task);
+    result = JSON.stringify(taskInfo, null, 2);
+  }
+}
+
+result;

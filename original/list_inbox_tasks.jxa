@@ -1,0 +1,15 @@
+#!/usr/bin/osascript -l JavaScript
+
+const app = Application('OmniFocus');
+app.includeStandardAdditions = true;
+
+const inboxTasks = app.defaultDocument.inboxTasks();
+const result = [];
+
+for (const task of inboxTasks) {
+  if (!task.completed()) {
+    result.push(`${task.id()}\t${task.name()}`);
+  }
+}
+
+result.join("\n");
