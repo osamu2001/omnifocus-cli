@@ -41,6 +41,17 @@ interface OmniFocusTask {
 interface OmniFocusProject {
   id(): string;
   name(): string;
+  note(): string;
+  completed(): boolean;
+  flagged(): boolean;
+  creationDate(): Date;
+  modificationDate(): Date;
+  tags(): OmniFocusTag[];
+  dueDate(): Date | null;
+  effectivePriority(): number | null;
+  parent(): OmniFocusProject | null;
+  projects(): OmniFocusProject[];
+  flattenedTasks(): OmniFocusTask[];
 }
 
 // OmniFocusのタグ型定義
@@ -52,6 +63,7 @@ interface OmniFocusTag {
 // OmniFocusのドキュメント型定義
 interface OmniFocusDocument {
   flattenedTasks(): OmniFocusTask[];
+  flattenedProjects(): OmniFocusProject[];
 }
 
 // OmniFocusアプリケーション型定義

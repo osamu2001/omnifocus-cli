@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 ObjC.import('Foundation');
@@ -111,7 +110,7 @@ if (typeof $.NSProcessInfo !== "undefined") {
     }
 }
 const projectId = args[4] || null;
-let result = null;
+let resultValue = null;
 if (!projectId) {
     console.log("Usage: show_project.jxa [projectId]");
 }
@@ -135,7 +134,7 @@ else {
     }
     else {
         const projectInfo = getProjectInfo(project);
-        result = JSON.stringify(projectInfo, null, 2);
+        resultValue = JSON.stringify(projectInfo, null, 2);
     }
 }
-result;
+resultValue;
