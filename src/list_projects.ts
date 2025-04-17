@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 
@@ -58,49 +57,53 @@ function getFullFolderPath(folder: any): string {
 }
 
 // メイン処理
-const app = Application('OmniFocus');
-app.includeStandardAdditions = true;
-const doc = app.defaultDocument;
-const projects = doc.flattenedProjects();
+function main() {
+  const omnifocusApp = Application('OmniFocus');
+  omnifocusApp.includeStandardAdditions = true;
+  const document = omnifocusApp.defaultDocument;
+  const projects = document.flattenedProjects();
 
-const lines: string[] = [];
+  const lines: string[] = [];
 
-for (const p of projects) {
-  let status = "";
-  try {
-    status = p.status();
-  } catch (e) {
-    continue;
-  }
-
-  if (status !== "completed" && status !== "dropped" && status !== "done status") {
-    let projectName = "";
-    let projectID = "";
+  for (const p of projects) {
+    let status = "";
     try {
-      projectName = p.name();
-      projectID = p.id();
+      status = p.status();
     } catch (e) {
       continue;
     }
-    
-    let folder = null;
-    try {
-      folder = p.folder();
-      if (isMissingValue(folder) || !folder || typeof folder.name !== "function") {
+
+    if (status !== "completed" && status !== "dropped" && status !== "done status") {
+      let projectName = "";
+      let projectID = "";
+      try {
+        projectName = p.name();
+        projectID = p.id();
+      } catch (e) {
+        continue;
+      }
+      
+      let folder = null;
+      try {
+        folder = p.folder();
+        if (isMissingValue(folder) || !folder || typeof folder.name !== "function") {
+          folder = null;
+        }
+      } catch (e) {
         folder = null;
       }
-    } catch (e) {
-      folder = null;
-    }
-    
-    let folderPath = "";
-    if (folder) {
-      folderPath = getFullFolderPath(folder);
-      lines.push(`${projectID}\t${folderPath}/${projectName}`);
-    } else {
-      lines.push(`${projectID}\t${projectName}`);
+      
+      let folderPath = "";
+      if (folder) {
+        folderPath = getFullFolderPath(folder);
+        lines.push(`${projectID}\t${folderPath}/${projectName}`);
+      } else {
+        lines.push(`${projectID}\t${projectName}`);
+      }
     }
   }
+
+  return lines.join("\n");
 }
 
-lines.join("\n");
+main();

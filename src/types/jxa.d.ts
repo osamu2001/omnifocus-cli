@@ -52,12 +52,22 @@ interface OmniFocusProject {
   parent(): OmniFocusProject | null;
   projects(): OmniFocusProject[];
   flattenedTasks(): OmniFocusTask[];
+  status(): string;
+  folder(): OmniFocusFolder | null;
 }
 
 // OmniFocusのタグ型定義
 interface OmniFocusTag {
   id(): string;
   name(): string;
+}
+
+// OmniFocusのフォルダ型定義
+interface OmniFocusFolder {
+  id(): string;
+  name(): string;
+  container(): OmniFocusFolder | null;
+  class(): string;
 }
 
 // OmniFocusのドキュメント型定義
