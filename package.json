@@ -1,0 +1,27 @@
+{
+  "name": "omnifocus-cli",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "watch": "tsc --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/osamu2001/omnifocus-cli.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/osamu2001/omnifocus-cli/issues"
+  },
+  "homepage": "https://github.com/osamu2001/omnifocus-cli#readme",
+  "description": "",
+  "devDependencies": {
+    "@jxa/types": "^1.4.0",
+    "typescript": "^5.8.3"
+  }
+}
