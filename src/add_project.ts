@@ -1,26 +1,7 @@
 #!/usr/bin/osascript -l JavaScript
 
-// @ts-nocheck
-// TypeScriptでJXA用の型を利用
-ObjC.import('stdlib');
-
-/**
- * コマンドライン引数を取得します
- */
-function getCommandLineArguments(): string[] {
-  const args: string[] = [];
-  // @ts-ignore
-  if (typeof $.NSProcessInfo !== "undefined") {
-    // @ts-ignore
-    const nsArgs = $.NSProcessInfo.processInfo.arguments;
-    for (let i = 0; i < nsArgs.count; i++) {
-      // @ts-ignore
-      args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-    }
-    return args.slice(2);
-  }
-  return args;
-}
+import { getCommandLineArguments } from './utils/cli';
+import { getOmniFocusApp, getDefaultDocument } from './utils/omnifocus';
 
 /**
  * 指定された名前のプロジェクトを追加します
@@ -31,21 +12,26 @@ function addProject(projectName: string): void {
     console.log("プロジェクト名が指定されていません。");
     return;
   }
+  
   try {
-    // @ts-ignore
-    const app = Application('OmniFocus');
-    // @ts-ignore
-    app.includeStandardAdditions = true;
-    // @ts-ignore
-    const doc = app.defaultDocument;
-    // @ts-ignore
+    const app = getOmniFocusApp();
+    const doc = getDefaultDocument();
     doc.projects.push(app.Project({ name: projectName }));
+    console.log(`プロジェクト「${projectName}」を追加しました。`);
   } catch (e) {
-    console.error(`プロジェクト追加中にエラー: ${e}`);
+    console.error(`プロジェクト追加中にエラー: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 
 // メイン処理
-const cliArgs = getCommandLineArguments();
-const projectName = cliArgs.length > 0 ? cliArgs[cliArgs.length - 1] : "名称未設定プロジェクト (TS)";
-addProject(projectName);
+declare const require: any;
+declare const module: any;
+
+if (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module) {
+  const cliArgs = getCommandLineArguments();
+  const projectName = cliArgs.length > 0 ? cliArgs[cliArgs.length - 1] : "名称未設定プロジェクト";
+  addProject(projectName);
+}
+
+// テスト/再利用のためにexport
+export { addProject };
