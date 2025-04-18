@@ -64,49 +64,31 @@ function showTaskMain() {
             }
             // 親タスク情報の取得
             try {
-                // 直接JXAでタスク間の親子関係を調べる（AppleScriptなしで試行）
+                // すべてのタスクを調べて、このタスクがサブタスクとして含まれているか確認
                 let parentTaskFound = false;
-                // 方法1: すべてのタスクを調べて、このタスクがサブタスクとして含まれているか確認
-                try {
-                    const allTasks = doc.flattenedTasks();
-                    const taskId = task.id();
-                    logError(`すべてのタスクから親タスクを検索します。対象タスクID: ${taskId}`);
-                    for (const potentialParent of allTasks) {
-                        try {
-                            // このタスクがサブタスクを持っているか確認
-                            const subtasks = potentialParent.tasks();
-                            // サブタスクの中に目的のタスクがあるか調べる
-                            for (const subtask of subtasks) {
-                                try {
-                                    if (subtask.id() === taskId) {
-                                        // 親タスクが見つかった！
-                                        info.containingTask = {
-                                            id: potentialParent.id(),
-                                            name: potentialParent.name()
-                                        };
-                                        logError(`親タスクが見つかりました: ${potentialParent.name()}`);
-                                        parentTaskFound = true;
-                                        break;
-                                    }
-                                }
-                                catch (subtaskError) {
-                                    // 個別のサブタスク処理エラーは無視
+                const allTasks = doc.flattenedTasks();
+                const taskId = task.id();
+                for (const potentialParent of allTasks) {
+                    try {
+                        const subtasks = potentialParent.tasks();
+                        for (const subtask of subtasks) {
+                            try {
+                                if (subtask.id() === taskId) {
+                                    // 親タスクが見つかった
+                                    info.containingTask = {
+                                        id: potentialParent.id(),
+                                        name: potentialParent.name()
+                                    };
+                                    parentTaskFound = true;
+                                    break;
                                 }
                             }
-                            if (parentTaskFound)
-                                break;
+                            catch (e) { /* 処理を継続 */ }
                         }
-                        catch (taskError) {
-                            // 個別のタスク処理エラーは無視
-                        }
+                        if (parentTaskFound)
+                            break;
                     }
-                }
-                catch (searchError) {
-                    logError(`親タスク検索エラー: ${searchError}`);
-                }
-                // デバッグ情報を出力
-                if (DEBUG) {
-                    console.log(`親タスク情報: ${JSON.stringify(info.containingTask)}`);
+                    catch (e) { /* 処理を継続 */ }
                 }
             }
             catch (e) {
