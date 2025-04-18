@@ -20,19 +20,19 @@ function addProjectMain() {
   }
 
   /**
-   * 指定された名前のプロジェクトを追加します
-   * @param projectName 追加するプロジェクトの名前
+   * 指定されたIDのプロジェクトを追加します
+   * @param projectID 追加するプロジェクトのID
    */
-  function addProject(projectName: string): void {
-    if (!projectName) {
-      console.log("プロジェクト名が指定されていません。");
+  function addProject(projectID: string): void {
+    if (!projectID) {
+      console.log("プロジェクトIDが指定されていません。");
       return;
     }
     try {
       const app = Application('OmniFocus');
       app.includeStandardAdditions = true;
       const doc = app.defaultDocument;
-      doc.projects.push(app.Project({ name: projectName }));
+      doc.projects.push(app.Project({ name: projectID }));
     } catch (e) {
       console.error(`プロジェクト追加中にエラー: ${e}`);
     }
@@ -40,8 +40,8 @@ function addProjectMain() {
 
   // メイン処理
   const cliArgs = getCommandLineArguments();
-  const projectName = cliArgs.length > 0 ? cliArgs[cliArgs.length - 1] : "名称未設定プロジェクト (TS)";
-  addProject(projectName);
+  const projectID = cliArgs.length > 0 ? cliArgs[cliArgs.length - 1] : "名称未設定プロジェクト (TS)";
+  addProject(projectID);
 }
 
 addProjectMain();
