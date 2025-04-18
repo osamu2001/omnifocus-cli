@@ -3,7 +3,7 @@
 // @ts-nocheck
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
-(function () {
+function listTagTasksMain() {
     /**
      * コマンドライン引数を取得します
      * @returns {string[]} コマンドライン引数の配列
@@ -100,4 +100,5 @@ ObjC.import('stdlib');
         // @ts-ignore
         stderr.writeData(errorData);
     }
-})();
+}
+listTagTasksMain();

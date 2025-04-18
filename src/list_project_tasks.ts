@@ -4,7 +4,7 @@
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 
-(function() {
+function listProjectTasksMain() {
   /**
    * コマンドライン引数を取得します
    * @returns {string[]} コマンドライン引数の配列
@@ -125,4 +125,6 @@ ObjC.import('stdlib');
     }
   }
   return result;
-})();
+}
+
+listProjectTasksMain();

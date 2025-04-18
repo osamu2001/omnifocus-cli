@@ -2,7 +2,7 @@
 "use strict";
 // @ts-nocheck
 // TypeScriptでJXA用の型を利用
-(function () {
+function projectAddTaskMain() {
     ObjC.import('stdlib');
     /**
      * コマンドライン引数を取得します
@@ -100,4 +100,5 @@
         }
     }
     return null;
-})();
+}
+projectAddTaskMain();

@@ -2,7 +2,7 @@
 
 // @ts-nocheck
 // TypeScriptでJXA用の型を利用
-(function() {
+function projectAddTaskMain() {
   ObjC.import('stdlib');
 
   /**
@@ -104,4 +104,6 @@
     }
   }
   return null;
-})();
+}
+
+projectAddTaskMain();
