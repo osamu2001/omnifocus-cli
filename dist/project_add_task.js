@@ -1,106 +1,67 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
 // TypeScriptでJXA用の型を利用
+ObjC.import('stdlib');
 function projectAddTaskMain() {
-    ObjC.import('stdlib');
-    /**
-     * コマンドライン引数を取得します
-     * @returns {string[]} コマンドライン引数の配列
-     */
-    function getCommandLineArguments() {
-        const args = [];
-        if (typeof $.NSProcessInfo !== "undefined") {
-            const nsArgs = $.NSProcessInfo.processInfo.arguments;
-            for (let i = 0; i < nsArgs.count; i++) {
-                args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-            }
-            return args.slice(4);
+    // コマンドライン引数を取得
+    const args = [];
+    if (typeof $.NSProcessInfo !== "undefined") {
+        const nsArgs = $.NSProcessInfo.processInfo.arguments;
+        for (let i = 0; i < nsArgs.count; i++) {
+            args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
         }
-        return args;
     }
-    /**
-     * プロジェクトIDが有効かどうかを検証します
-     * @param projectId プロジェクトID
-     * @returns プロジェクトIDが有効な場合はtrue、そうでない場合はfalse
-     */
-    function validateProjectId(projectId) {
-        return typeof projectId === "string" && projectId.trim().length > 0;
+    const projectID = args[4];
+    const taskName = args[5];
+    if (!projectID || !taskName) {
+        console.log("Usage: project_add_task.ts <projectID> <taskName>");
+        $.exit(1);
+        return null;
     }
-    /**
-     * プロジェクトIDからプロジェクトを検索します
-     * @param doc OmniFocusのドキュメント
-     * @param projectId 検索対象のプロジェクトID
-     * @returns 見つかったプロジェクト、見つからない場合はnull
-     */
-    function findProjectById(doc, projectId) {
-        // トップレベルのプロジェクトを検索
-        const topProjects = doc.projects();
-        for (const p of topProjects) {
-            if (p.id() === projectId) {
-                return p;
+    try {
+        const app = Application("OmniFocus");
+        app.includeStandardAdditions = true;
+        const doc = app.defaultDocument;
+        // プロジェクトを検索
+        let targetProject = null;
+        const projects = doc.projects();
+        for (let i = 0; i < projects.length; i++) {
+            if (projects[i].id() === projectID) {
+                targetProject = projects[i];
+                break;
             }
         }
-        // フォルダ内のプロジェクトを再帰的に検索
-        function searchFolders(folders) {
-            for (const folder of folders) {
-                const projects = folder.projects();
-                for (const p of projects) {
-                    try {
-                        if (p.id() === projectId) {
-                            return p;
-                        }
-                    }
-                    catch (e) {
-                        console.error(`プロジェクトID取得エラー: ${e.message}`);
+        if (!targetProject) {
+            // フォルダ内も検索
+            const folders = doc.folders();
+            for (let i = 0; i < folders.length; i++) {
+                const folderProjects = folders[i].projects();
+                for (let j = 0; j < folderProjects.length; j++) {
+                    if (folderProjects[j].id() === projectID) {
+                        targetProject = folderProjects[j];
+                        break;
                     }
                 }
-                const subfolders = folder.folders();
-                const found = searchFolders(subfolders);
-                if (found)
-                    return found;
+                if (targetProject)
+                    break;
             }
+        }
+        if (!targetProject) {
+            console.log("Error: Project not found: " + projectID);
+            $.exit(1);
             return null;
         }
-        return searchFolders(doc.folders());
+        // タスクを追加
+        const project = targetProject;
+        project.tasks.push(app.Task({ name: taskName }));
+        // 成功
+        $.exit(0);
+        return null;
     }
-    // メイン処理
-    const args = getCommandLineArguments();
-    const projectID = args[0];
-    const taskName = args[1];
-    let result = null;
-    if (!validateProjectId(projectID) || taskName == null || typeof taskName !== "string" || taskName.trim().length === 0) {
-        console.log('Error: Usage: project_add_task.ts <projectID> <taskName>');
+    catch (e) {
+        console.log("Error: " + e.message);
         $.exit(1);
+        return null;
     }
-    else {
-        try {
-            const app = Application('OmniFocus');
-            app.includeStandardAdditions = true;
-            const doc = app.defaultDocument;
-            const targetProject = findProjectById(doc, projectID);
-            if (!targetProject) {
-                console.log('Error: Project not found: ' + projectID);
-                $.exit(1);
-            }
-            else {
-                try {
-                    // AppleScriptの書き方でタスクを追加する
-                    // JXA/AppleScriptではmakeTaskではなくTaskオブジェクトを作成し、そのままプロジェクトプロパティをセットする
-                    const newTask = app.Task({ name: taskName, "project": targetProject });
-                    console.log(`タスク「${taskName}」をプロジェクト「${targetProject.name()}」に追加しました`);
-                    $.exit(0);
-                }
-                catch (e) {
-                    console.log('Error: ' + e.message);
-                    $.exit(1);
-                }
-            }
-        }
-        catch (e) {
-            console.log('Error: ' + e.message);
-            $.exit(1);
-        }
-    }
-    return null;
 }
 projectAddTaskMain();
