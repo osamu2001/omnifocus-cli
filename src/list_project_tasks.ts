@@ -1,22 +1,18 @@
 #!/usr/bin/osascript -l JavaScript
 
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 
-(function() {
+function listProjectTasksMain() {
   /**
    * コマンドライン引数を取得します
    * @returns {string[]} コマンドライン引数の配列
    */
   function getCommandLineArguments(): string[] {
     const args: string[] = [];
-    // @ts-ignore
     if (typeof $.NSProcessInfo !== "undefined") {
-      // @ts-ignore
       const nsArgs = $.NSProcessInfo.processInfo.arguments;
       for (let i = 0; i < nsArgs.count; i++) {
-        // @ts-ignore
         args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
       }
       return args.slice(4);
@@ -75,11 +71,8 @@ ObjC.import('stdlib');
     console.log("Error: projectId not found or invalid");
   } else {
     try {
-      // @ts-ignore
       const app = Application('OmniFocus');
-      // @ts-ignore
       app.includeStandardAdditions = true;
-      // @ts-ignore
       const doc = app.defaultDocument;
 
       const project = findProjectById(doc, projectId);
@@ -95,7 +88,7 @@ ObjC.import('stdlib');
                 if (!t.completed()) {
                   output.push(`${t.id()}\t${t.name()}`);
                 }
-              } catch (e) {}
+              } catch (e: any) {}
             }
           } else if (typeof project.tasks === "function") {
             /**
@@ -112,17 +105,19 @@ ObjC.import('stdlib');
                       collectIncompleteTasks(t.tasks(), output);
                     }
                   }
-                } catch (e) {}
+                } catch (e: any) {}
               }
             }
             collectIncompleteTasks(project.tasks(), output);
           }
-        } catch (e) {}
+        } catch (e: any) {}
         result = output.join("\n");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.log("Error: " + e.message);
     }
   }
   return result;
-})();
+}
+
+listProjectTasksMain();
