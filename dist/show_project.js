@@ -3,7 +3,54 @@
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 ObjC.import('Foundation');
+/**
+ * プロジェクト情報を表示する
+ * @returns JSON形式のプロジェクト情報
+ */
 function showProjectMain() {
+    var _a;
+    /**
+     * コマンドライン引数を取得する
+     * @returns 引数の配列
+     */
+    function getArgsFromCommandLine() {
+        const args = [];
+        if (typeof $.NSProcessInfo !== "undefined") {
+            const nsArgs = $.NSProcessInfo.processInfo.arguments;
+            for (let i = 0; i < nsArgs.count; i++) {
+                args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
+            }
+        }
+        return args;
+    }
+    /**
+     * IDからプロジェクトを検索する
+     * @param doc OmniFocusドキュメント
+     * @param projectId 検索するプロジェクトID
+     * @returns 見つかったプロジェクト、または null
+     */
+    function findProjectById(doc, projectId) {
+        try {
+            // flattenedProjectsを使用することで、すべての階層のプロジェクトを一度に取得
+            const projects = doc.flattenedProjects();
+            for (let i = 0; i < projects.length; i++) {
+                try {
+                    if (projects[i].id() === projectId) {
+                        return projects[i];
+                    }
+                }
+                catch (e) {
+                    // このプロジェクトの処理中にエラーが発生したら次へ
+                    continue;
+                }
+            }
+        }
+        catch (e) {
+            // プロジェクト取得時にエラーが発生した場合
+            console.log(`プロジェクト検索中にエラー: ${e}`);
+        }
+        return null;
+    }
     /**
      * プロジェクトの詳細情報を取得する
      * @param project プロジェクトオブジェクト
@@ -12,7 +59,23 @@ function showProjectMain() {
     function getProjectInfo(project) {
         if (!project)
             return null;
+        // プロジェクト情報の型定義
         const info = {};
+        // プロパティの安全な取得（エラーが発生しても処理を継続）
+        const safeGetProperty = (obj, propertyName, defaultValue = undefined) => {
+            try {
+                if (typeof obj[propertyName] === 'function') {
+                    return obj[propertyName]();
+                }
+                else {
+                    return obj[propertyName] || defaultValue;
+                }
+            }
+            catch (e) {
+                return defaultValue;
+            }
+        };
+        // 基本的なプロジェクト情報
         try {
             info.id = project.id();
         }
@@ -41,59 +104,56 @@ function showProjectMain() {
             info.modificationDate = project.modificationDate();
         }
         catch (e) { }
+        // タグ情報
         try {
             const tags = project.tags();
             info.tags = [];
             for (let i = 0; i < tags.length; i++) {
-                try {
-                    info.tags.push({
-                        id: tags[i].id(),
-                        name: tags[i].name()
-                    });
-                }
-                catch (e) { }
+                info.tags.push({
+                    id: safeGetProperty(tags[i], 'id'),
+                    name: safeGetProperty(tags[i], 'name')
+                });
             }
         }
-        catch (e) { }
-        try {
-            info.dueDate = project.dueDate ? project.dueDate() : null;
+        catch (e) {
+            info.tags = [];
         }
-        catch (e) { }
+        // 期日と優先度
+        info.dueDate = safeGetProperty(project, 'dueDate', null);
+        info.priority = safeGetProperty(project, 'effectivePriority', null);
+        // 親プロジェクト情報
         try {
-            info.priority = project.effectivePriority ? project.effectivePriority() : null;
-        }
-        catch (e) { }
-        try {
-            const parent = project.parent ? project.parent() : null;
+            const parent = safeGetProperty(project, 'parent', null);
             if (parent) {
                 info.parent = {
-                    id: parent.id ? parent.id() : null,
-                    name: parent.name ? parent.name() : null
+                    id: safeGetProperty(parent, 'id', null),
+                    name: safeGetProperty(parent, 'name', null)
                 };
             }
             else {
                 info.parent = null;
             }
         }
-        catch (e) { }
+        catch (e) {
+            info.parent = null;
+        }
+        // 子プロジェクト数
         try {
-            const children = project.projects ? project.projects() : [];
+            const children = safeGetProperty(project, 'projects', []) || [];
             info.childProjectCount = children.length;
         }
         catch (e) {
             info.childProjectCount = 0;
         }
+        // プロジェクトの進捗状況（完了タスク / 全タスク）
         try {
-            const tasks = project.flattenedTasks ? project.flattenedTasks() : [];
+            const tasks = safeGetProperty(project, 'flattenedTasks', []) || [];
             const totalTasks = tasks.length;
             let completedTasks = 0;
             for (let i = 0; i < totalTasks; i++) {
-                try {
-                    if (tasks[i].completed && tasks[i].completed()) {
-                        completedTasks++;
-                    }
+                if (safeGetProperty(tasks[i], 'completed', false)) {
+                    completedTasks++;
                 }
-                catch (e) { }
             }
             info.progress = totalTasks > 0 ? (completedTasks / totalTasks) : null;
         }
@@ -102,42 +162,35 @@ function showProjectMain() {
         }
         return info;
     }
-    // メイン処理
-    const args = [];
-    if (typeof $.NSProcessInfo !== "undefined") {
-        const nsArgs = $.NSProcessInfo.processInfo.arguments;
-        for (let i = 0; i < nsArgs.count; i++) {
-            args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-        }
-    }
-    const projectId = args[4] || null;
-    let result = null;
+    // メイン処理開始
+    const args = getArgsFromCommandLine();
+    const scriptName = ((_a = args[0]) === null || _a === void 0 ? void 0 : _a.split('/').pop()) || 'show_project.ts';
+    const projectId = args[4];
     if (!projectId) {
-        console.log("Usage: show_project.jxa [projectId]");
+        console.log(`使用法: ${scriptName} <projectId>`);
+        $.exit(1);
+        return;
     }
-    else {
+    try {
+        // OmniFocusアプリケーションを起動
         const app = Application('OmniFocus');
         app.includeStandardAdditions = true;
         const doc = app.defaultDocument;
-        const projects = doc.flattenedProjects();
-        let project = null;
-        for (let i = 0; i < projects.length; i++) {
-            try {
-                if (projects[i].id() === projectId) {
-                    project = projects[i];
-                    break;
-                }
-            }
-            catch (e) { }
-        }
+        // プロジェクトをIDで検索
+        const project = findProjectById(doc, projectId);
         if (!project) {
-            console.log("Project not found: " + projectId);
+            console.log(`プロジェクトが見つかりません: ${projectId}`);
+            $.exit(1);
+            return;
         }
-        else {
-            const projectInfo = getProjectInfo(project);
-            result = JSON.stringify(projectInfo, null, 2);
-        }
+        // プロジェクト情報を取得して返す
+        const projectInfo = getProjectInfo(project);
+        return JSON.stringify(projectInfo, null, 2);
     }
-    return result;
+    catch (e) {
+        console.log(`エラー: ${e}`);
+        $.exit(1);
+        return;
+    }
 }
 showProjectMain();
