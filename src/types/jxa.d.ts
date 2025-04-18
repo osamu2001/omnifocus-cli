@@ -81,6 +81,7 @@ interface OmniFocusDocument {
   flattenedTasks(): OmniFocusTask[];
   flattenedProjects(): OmniFocusProject[];
   perspectives(): OmniFocusPerspective[];
+  inboxTasks(): OmniFocusTask[];
 }
 
 // OmniFocusアプリケーション型定義
