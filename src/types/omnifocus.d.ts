@@ -201,6 +201,10 @@ declare interface OmniFocusFolder {
   class(): string;
   /** フォルダの説明を取得 */
   note(): string;
+  /** フォルダの作成日を取得 */
+  creationDate(): Date;
+  /** フォルダの変更日を取得 */
+  modificationDate(): Date;
 }
 
 /**

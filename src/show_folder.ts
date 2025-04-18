@@ -165,10 +165,18 @@ function showFolderMain() {
     }
     
     // 日付情報の取得
-    // OmniFocusのフォルダにはcreationDateとmodificationDateが
-    // 直接アクセス可能ではない可能性があるため、nullとして扱う
-    const creationDate = null;
-    const modificationDate = null;
+    let creationDate = null;
+    let modificationDate = null;
+    try {
+      if (typeof folder.creationDate === 'function') {
+        creationDate = folder.creationDate();
+      }
+      if (typeof folder.modificationDate === 'function') {
+        modificationDate = folder.modificationDate();
+      }
+    } catch (e) {
+      console.log(`日付情報の取得中にエラー: ${e}`);
+    }
     
     // 親フォルダ情報の取得
     let parent = null;
