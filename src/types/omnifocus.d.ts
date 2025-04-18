@@ -25,7 +25,21 @@ declare interface OmniFocusApplication {
    * @param properties タスクのプロパティ
    * @returns 作成されたタスクオブジェクト
    */
-  Task(properties: { name: string, [key: string]: any }): any;
+  Task(properties: { name: string, [key: string]: any }): OmniFocusTask;
+
+  /**
+   * 新しいインボックスタスクオブジェクトを作成する
+   * @param properties タスクのプロパティ
+   * @returns 作成されたインボックスタスクオブジェクト
+   */
+  InboxTask(properties: { name: string, [key: string]: any }): OmniFocusTask;
+
+  /**
+   * 新しいプロジェクトオブジェクトを作成する
+   * @param properties プロジェクトのプロパティ
+   * @returns 作成されたプロジェクトオブジェクト
+   */
+  Project(properties: { name: string, [key: string]: any }): OmniFocusProject;
 }
 
 /**
@@ -33,7 +47,10 @@ declare interface OmniFocusApplication {
  */
 declare interface OmniFocusDocument {
   /** インボックスタスクを取得 */
-  inboxTasks(): OmniFocusTask[];
+  inboxTasks: {
+    (): OmniFocusTask[];
+    push(task: OmniFocusTask): void;
+  };
   /** すべてのフォルダを取得 */
   folders(): OmniFocusFolder[];
   /** すべてのフォルダとサブフォルダを取得 */
@@ -47,7 +64,10 @@ declare interface OmniFocusDocument {
   /** すべてのパースペクティブを取得 */
   perspectives(): OmniFocusPerspective[];
   /** すべてのプロジェクトを取得（非フラット化） */
-  projects(): OmniFocusProject[];
+  projects: {
+    (): OmniFocusProject[];
+    push(project: OmniFocusProject): void;
+  };
   
   /**
    * 新しいタスクを作成する
@@ -196,7 +216,12 @@ declare interface OmniFocusProject {
   /** プロジェクトのフォルダを取得 */
   folder(): OmniFocusFolder | null;
   /** プロジェクトのタスクを取得 */
-  tasks(): OmniFocusTask[];
+  tasks: {
+    (): OmniFocusTask[];
+    push(task: OmniFocusTask): void;
+  };
+  /** プロジェクト内のすべてのタスク（子タスク含む）を取得 */
+  flattenedTasks?(): OmniFocusTask[];
   /** プロジェクトのステータスを取得 */
   status(): string;
   /** プロジェクトの有効なステータスを取得 */
@@ -258,7 +283,10 @@ declare interface OmniFocusTask {
   /** 親タスクを取得（containingTaskとして使用） */
   containingTask(): OmniFocusTask | null;
   /** 子タスクを取得（tasksとして使用） */
-  tasks(): OmniFocusTask[];
+  tasks: {
+    (): OmniFocusTask[];
+    push(task: OmniFocusTask): void;
+  };
   /** タスクの有効な期限を取得 */
   effectiveDueDate(): Date | null;
   /** タスクの有効な開始日を取得 */
@@ -271,6 +299,8 @@ declare interface OmniFocusTask {
   markComplete(flag: boolean): void;
   /** タスクにフラグを設定 */
   markFlagged(flag: boolean): void;
+  /** タスクがブロックされているかどうかを取得 */
+  blocked?(): boolean;
 }
 
 /**
