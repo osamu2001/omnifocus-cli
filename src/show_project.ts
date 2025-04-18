@@ -10,18 +10,16 @@ ObjC.import('Foundation');
  */
 function showProjectMain() {
   /**
-   * コマンドライン引数を取得する
-   * @returns 引数の配列
+   * コマンドライン引数からプロジェクトIDを取得する
+   * @returns プロジェクトID
    */
-  function getArgsFromCommandLine(): string[] {
-    const args: string[] = [];
+  function getProjectIdFromArgs(): string {
     if (typeof $.NSProcessInfo !== "undefined") {
       const nsArgs = $.NSProcessInfo.processInfo.arguments;
-      for (let i = 0; i < nsArgs.count; i++) {
-        args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-      }
+      // osascriptの仕様上、4番目の引数がプロジェクトID
+      return nsArgs.count > 4 ? ObjC.unwrap(nsArgs.objectAtIndex(4)) as string : '';
     }
-    return args;
+    return '';
   }
 
   /**
@@ -161,12 +159,10 @@ function showProjectMain() {
   }
 
   // メイン処理開始
-  const args = getArgsFromCommandLine();
-  const scriptName = args[0]?.split('/').pop() || 'show_project.ts';
-  const projectId = args[4];
+  const projectId = getProjectIdFromArgs();
 
   if (!projectId) {
-    console.log(`使用法: ${scriptName} <projectId>`);
+    console.log(`使用法: show_project <projectId>`);
     $.exit(1);
     return;
   }
