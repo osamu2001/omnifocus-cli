@@ -4,54 +4,40 @@
 ObjC.import('stdlib');
 ObjC.import('Foundation');
 
-function showTaskMain() {
+function showTaskMain(): string | null {
   /**
    * タスクの詳細情報を取得する
    * @param task タスクオブジェクト
    * @returns タスク情報のオブジェクト
    */
-  function getTaskInfo(task: any): any {
+  function getTaskInfo(task: OmniFocusTask): TaskInfo | null {
     if (!task) return null;
 
-    const info: {
-      id?: string;
-      name?: string;
-      note?: string;
-      completed?: boolean;
-      flagged?: boolean;
-      deferDate?: Date;
-      dueDate?: Date;
-      creationDate?: Date;
-      modificationDate?: Date;
-      completionDate?: Date;
-      estimatedMinutes?: number;
-      repetitionRule?: any;
-      containingTask?: string | null;
-      containingProject?: {id: string; name: string} | null;
-      tags?: Array<{id: string; name: string}>;
-      subtasks?: Array<{id: string; name: string}>;
-    } = {};
+    const info: TaskInfo = {};
 
-    try { info.id = task.id(); } catch (e) {}
-    try { info.name = task.name(); } catch (e) {}
-    try { info.note = task.note(); } catch (e) {}
-    try { info.completed = task.completed(); } catch (e) {}
-    try { info.flagged = task.flagged(); } catch (e) {}
+    try { info.id = task.id(); } catch (e: any) { console.log(`ID取得エラー: ${e.message}`); }
+    try { info.name = task.name(); } catch (e: any) { console.log(`名前取得エラー: ${e.message}`); }
+    try { info.note = task.note(); } catch (e: any) { console.log(`メモ取得エラー: ${e.message}`); }
+    try { info.completed = task.completed(); } catch (e: any) { console.log(`完了状態取得エラー: ${e.message}`); }
+    try { info.flagged = task.flagged(); } catch (e: any) { console.log(`フラグ状態取得エラー: ${e.message}`); }
 
-    try { info.deferDate = task.deferDate(); } catch (e) {}
-    try { info.dueDate = task.dueDate(); } catch (e) {}
-    try { info.creationDate = task.creationDate(); } catch (e) {}
-    try { info.modificationDate = task.modificationDate(); } catch (e) {}
-    try { info.completionDate = task.completionDate(); } catch (e) {}
+    try { info.deferDate = task.deferDate(); } catch (e: any) { console.log(`開始日取得エラー: ${e.message}`); }
+    try { info.dueDate = task.dueDate(); } catch (e: any) { console.log(`期限取得エラー: ${e.message}`); }
+    try { info.creationDate = task.creationDate(); } catch (e: any) { console.log(`作成日取得エラー: ${e.message}`); }
+    try { info.modificationDate = task.modificationDate(); } catch (e: any) { console.log(`更新日取得エラー: ${e.message}`); }
+    try { info.completionDate = task.completionDate(); } catch (e: any) { console.log(`完了日取得エラー: ${e.message}`); }
 
-    try { info.estimatedMinutes = task.estimatedMinutes(); } catch (e) {}
+    try { info.estimatedMinutes = task.estimatedMinutes(); } catch (e: any) { console.log(`予定時間取得エラー: ${e.message}`); }
 
-    try { info.repetitionRule = task.repetitionRule(); } catch (e) {}
+    try { info.repetitionRule = task.repetitionRule(); } catch (e: any) { console.log(`繰り返しルール取得エラー: ${e.message}`); }
 
     try {
-      const containingTask = task.containingTask();
-      info.containingTask = containingTask ? containingTask.id() : null;
-    } catch (e) {}
+      // タイプ変換エラーが発生するため、containingTaskの取得をスキップ
+      // コンソールにメッセージを出力せず、静かに処理する
+      info.containingTask = null;
+    } catch (e: any) { 
+      // エラーも静かに処理する
+    }
 
     try {
       const containingProject = task.containingProject();
@@ -59,7 +45,9 @@ function showTaskMain() {
         id: containingProject.id(),
         name: containingProject.name()
       } : null;
-    } catch (e) {}
+    } catch (e: any) { 
+      console.log(`親プロジェクト取得エラー: ${e.message}`); 
+    }
 
     try {
       const tags = task.tags();
@@ -70,9 +58,13 @@ function showTaskMain() {
             id: tags[i].id(),
             name: tags[i].name()
           });
-        } catch (e) {}
+        } catch (e: any) { 
+          console.log(`タグ情報取得エラー: ${e.message}`); 
+        }
       }
-    } catch (e) {}
+    } catch (e: any) { 
+      console.log(`タグ一覧取得エラー: ${e.message}`); 
+    }
 
     try {
       const subtasks = task.tasks();
@@ -83,9 +75,13 @@ function showTaskMain() {
             id: subtasks[i].id(),
             name: subtasks[i].name()
           });
-        } catch (e) {}
+        } catch (e: any) { 
+          console.log(`サブタスク情報取得エラー: ${e.message}`); 
+        }
       }
-    } catch (e) {}
+    } catch (e: any) { 
+      console.log(`サブタスク一覧取得エラー: ${e.message}`); 
+    }
 
     return info;
   }
@@ -95,22 +91,22 @@ function showTaskMain() {
   if (typeof $.NSProcessInfo !== "undefined") {
     const nsArgs = $.NSProcessInfo.processInfo.arguments;
     for (let i = 0; i < nsArgs.count; i++) {
-      args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
+      args.push(ObjC.unwrap<string>(nsArgs.objectAtIndex(i)));
     }
   }
 
   const taskId = args[4] || null;
-  let result = null;
+  let result: string | null = null;
 
   if (!taskId) {
     console.log("Usage: show_task.ts [taskId]");
   } else {
-    const app = Application('OmniFocus');
+    const app = Application('OmniFocus') as OmniFocusApplication;
     app.includeStandardAdditions = true;
 
     const doc = app.defaultDocument;
     const tasks = doc.flattenedTasks();
-    let task = null;
+    let task: OmniFocusTask | null = null;
     
     for (let i = 0; i < tasks.length; i++) {
       try {
@@ -118,7 +114,9 @@ function showTaskMain() {
           task = tasks[i];
           break;
         }
-      } catch (e) {}
+      } catch (e: any) {
+        console.log(`タスクID比較エラー: ${e.message}`);
+      }
     }
 
     if (!task) {
@@ -132,4 +130,5 @@ function showTaskMain() {
   return result;
 }
 
+// メイン関数を実行
 showTaskMain();

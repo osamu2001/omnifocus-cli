@@ -86,6 +86,12 @@ declare const $: {
    * 4は標準的なUTF8エンコーディングを表す
    */
   NSUTF8StringEncoding: number;
+
+  /**
+   * プロセスを終了する
+   * @param exitCode 終了コード（0は正常終了、非0は異常終了）
+   */
+  exit: (exitCode: number) => never;
 };
 
 // 標準追加機能のインターフェース

@@ -19,6 +19,13 @@ declare interface OmniFocusApplication {
   chooseFolder?: (params?: FolderParams) => string;
   setClipboard?: (text: string) => void;
   clipboard?: () => string;
+  
+  /**
+   * 新しいタスクオブジェクトを作成する
+   * @param properties タスクのプロパティ
+   * @returns 作成されたタスクオブジェクト
+   */
+  Task(properties: { name: string, [key: string]: any }): any;
 }
 
 /**
@@ -39,6 +46,8 @@ declare interface OmniFocusDocument {
   flattenedTags(): OmniFocusTag[];
   /** すべてのパースペクティブを取得 */
   perspectives(): OmniFocusPerspective[];
+  /** すべてのプロジェクトを取得（非フラット化） */
+  projects(): OmniFocusProject[];
   
   /**
    * 新しいタスクを作成する
@@ -246,6 +255,10 @@ declare interface OmniFocusTask {
   parent(): OmniFocusTask | null;
   /** タスクの子タスクを取得 */
   children(): OmniFocusTask[];
+  /** 親タスクを取得（containingTaskとして使用） */
+  containingTask(): OmniFocusTask | null;
+  /** 子タスクを取得（tasksとして使用） */
+  tasks(): OmniFocusTask[];
   /** タスクの有効な期限を取得 */
   effectiveDueDate(): Date | null;
   /** タスクの有効な開始日を取得 */

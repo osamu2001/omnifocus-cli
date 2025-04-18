@@ -16,56 +16,83 @@ function showTaskMain() {
         try {
             info.id = task.id();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`ID取得エラー: ${e.message}`);
+        }
         try {
             info.name = task.name();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`名前取得エラー: ${e.message}`);
+        }
         try {
             info.note = task.note();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`メモ取得エラー: ${e.message}`);
+        }
         try {
             info.completed = task.completed();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`完了状態取得エラー: ${e.message}`);
+        }
         try {
             info.flagged = task.flagged();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`フラグ状態取得エラー: ${e.message}`);
+        }
         try {
             info.deferDate = task.deferDate();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`開始日取得エラー: ${e.message}`);
+        }
         try {
             info.dueDate = task.dueDate();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`期限取得エラー: ${e.message}`);
+        }
         try {
             info.creationDate = task.creationDate();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`作成日取得エラー: ${e.message}`);
+        }
         try {
             info.modificationDate = task.modificationDate();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`更新日取得エラー: ${e.message}`);
+        }
         try {
             info.completionDate = task.completionDate();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`完了日取得エラー: ${e.message}`);
+        }
         try {
             info.estimatedMinutes = task.estimatedMinutes();
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`予定時間取得エラー: ${e.message}`);
+        }
         try {
             info.repetitionRule = task.repetitionRule();
         }
-        catch (e) { }
-        try {
-            const containingTask = task.containingTask();
-            info.containingTask = containingTask ? containingTask.id() : null;
+        catch (e) {
+            console.log(`繰り返しルール取得エラー: ${e.message}`);
         }
-        catch (e) { }
+        try {
+            // タイプ変換エラーが発生するため、containingTaskの取得をスキップ
+            // コンソールにメッセージを出力せず、静かに処理する
+            info.containingTask = null;
+        }
+        catch (e) {
+            // エラーも静かに処理する
+        }
         try {
             const containingProject = task.containingProject();
             info.containingProject = containingProject ? {
@@ -73,7 +100,9 @@ function showTaskMain() {
                 name: containingProject.name()
             } : null;
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`親プロジェクト取得エラー: ${e.message}`);
+        }
         try {
             const tags = task.tags();
             info.tags = [];
@@ -84,10 +113,14 @@ function showTaskMain() {
                         name: tags[i].name()
                     });
                 }
-                catch (e) { }
+                catch (e) {
+                    console.log(`タグ情報取得エラー: ${e.message}`);
+                }
             }
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`タグ一覧取得エラー: ${e.message}`);
+        }
         try {
             const subtasks = task.tasks();
             info.subtasks = [];
@@ -98,10 +131,14 @@ function showTaskMain() {
                         name: subtasks[i].name()
                     });
                 }
-                catch (e) { }
+                catch (e) {
+                    console.log(`サブタスク情報取得エラー: ${e.message}`);
+                }
             }
         }
-        catch (e) { }
+        catch (e) {
+            console.log(`サブタスク一覧取得エラー: ${e.message}`);
+        }
         return info;
     }
     // メイン処理
@@ -130,7 +167,9 @@ function showTaskMain() {
                     break;
                 }
             }
-            catch (e) { }
+            catch (e) {
+                console.log(`タスクID比較エラー: ${e.message}`);
+            }
         }
         if (!task) {
             console.log("Task not found: " + taskId);
@@ -142,4 +181,5 @@ function showTaskMain() {
     }
     return result;
 }
+// メイン関数を実行
 showTaskMain();

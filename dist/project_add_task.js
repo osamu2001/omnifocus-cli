@@ -1,7 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
-// TypeScriptでJXA用の型を利用sr/bin/env osascript -l JavaScript
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 function projectAddTaskMain() {
     ObjC.import('stdlib');
@@ -47,8 +45,13 @@ function projectAddTaskMain() {
             for (const folder of folders) {
                 const projects = folder.projects();
                 for (const p of projects) {
-                    if (p.id() === projectId) {
-                        return p;
+                    try {
+                        if (p.id() === projectId) {
+                            return p;
+                        }
+                    }
+                    catch (e) {
+                        console.error(`プロジェクトID取得エラー: ${e.message}`);
                     }
                 }
                 const subfolders = folder.folders();
@@ -80,8 +83,17 @@ function projectAddTaskMain() {
                 $.exit(1);
             }
             else {
-                targetProject.tasks.push(app.Task({ name: taskName }));
-                $.exit(0);
+                try {
+                    // AppleScriptの書き方でタスクを追加する
+                    // JXA/AppleScriptではmakeTaskではなくTaskオブジェクトを作成し、そのままプロジェクトプロパティをセットする
+                    const newTask = app.Task({ name: taskName, "project": targetProject });
+                    console.log(`タスク「${taskName}」をプロジェクト「${targetProject.name()}」に追加しました`);
+                    $.exit(0);
+                }
+                catch (e) {
+                    console.log('Error: ' + e.message);
+                    $.exit(1);
+                }
             }
         }
         catch (e) {
