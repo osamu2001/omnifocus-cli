@@ -7,7 +7,7 @@
  */
 
 function listInboxTasksMain() {
-  const app = Application('OmniFocus');
+  const app = Application('OmniFocus') as OmniFocusApplication;
   app.includeStandardAdditions = true;
 
   const inboxTasks = app.defaultDocument.inboxTasks();
