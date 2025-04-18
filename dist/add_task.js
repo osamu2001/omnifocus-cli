@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 function addTaskMain() {
@@ -9,12 +8,9 @@ function addTaskMain() {
      */
     function getCommandLineArguments() {
         const args = [];
-        // @ts-ignore
         if (typeof $.NSProcessInfo !== "undefined") {
-            // @ts-ignore
             const nsArgs = $.NSProcessInfo.processInfo.arguments;
             for (let i = 0; i < nsArgs.count; i++) {
-                // @ts-ignore
                 args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
             }
             return args.slice(2);
@@ -31,15 +27,10 @@ function addTaskMain() {
             return;
         }
         try {
-            // @ts-ignore
             const app = Application('OmniFocus');
-            // @ts-ignore
             app.includeStandardAdditions = true;
-            // @ts-ignore
             const doc = app.defaultDocument;
-            // @ts-ignore
             const inbox = doc.inboxTasks;
-            // @ts-ignore
             inbox.push(app.InboxTask({ name: taskName }));
         }
         catch (e) {

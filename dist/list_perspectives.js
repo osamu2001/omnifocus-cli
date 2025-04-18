@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 function listPerspectivesMain() {
     /**
@@ -20,17 +19,12 @@ function listPerspectivesMain() {
             default: return null;
         }
     }
-    // @ts-ignore
     const app = Application('OmniFocus');
-    // @ts-ignore
     app.includeStandardAdditions = true;
-    // @ts-ignore
     const doc = app.defaultDocument;
-    // @ts-ignore
     const perspectives = doc.perspectives();
     const lines = [];
-    // @ts-ignore
-    perspectives.forEach(p => {
+    perspectives.forEach((p) => {
         let id, name;
         try {
             id = p.id();
@@ -39,7 +33,7 @@ function listPerspectivesMain() {
                 lines.push(`${id}\t${name}`);
             }
             else {
-                const fixedName = getDefaultName(id);
+                const fixedName = id ? getDefaultName(id) : null;
                 if (fixedName) {
                     lines.push(`${id}\t${fixedName}`);
                 }
@@ -47,7 +41,7 @@ function listPerspectivesMain() {
         }
         catch (e) {
             try {
-                const fixedName = getDefaultName(id);
+                const fixedName = id ? getDefaultName(id) : null;
                 id = p.id();
                 if (fixedName) {
                     lines.push(`${id}\t${fixedName}`);

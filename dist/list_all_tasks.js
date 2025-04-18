@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 /**
  * @fileoverview OmniFocus の未完了タスクを階層的にリストアップする TypeScript/JXA スクリプト。
@@ -86,9 +85,7 @@ function listAllTasksMain() {
      */
     function getOmniFocusApp() {
         try {
-            // @ts-ignore
             const app = Application('OmniFocus');
-            // @ts-ignore
             app.includeStandardAdditions = true;
             return app;
         }
@@ -100,10 +97,8 @@ function listAllTasksMain() {
     // --- メイン処理 ---
     try {
         const app = getOmniFocusApp();
-        // @ts-ignore
         const doc = app.defaultDocument;
         // プロジェクトをフラットなリストで取得 (フォルダ内のプロジェクトも含む)
-        // @ts-ignore
         const projects = doc.flattenedProjects();
         const output = [];
         for (const project of projects) {
@@ -154,21 +149,15 @@ function listAllTasksMain() {
         // 結果を改行区切りで出力
         const resultString = output.join("\n");
         // ObjCのNSFileHandleを使って標準出力に書き込む
-        // @ts-ignore
         const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
-        // @ts-ignore
         const data = $.NSString.stringWithUTF8String(resultString).dataUsingEncoding($.NSUTF8StringEncoding);
-        // @ts-ignore
         stdout.writeData(data);
         // return文は関数内でのみ有効なので削除
     }
     catch (e) {
         // ObjCのNSFileHandleを使って標準エラー出力に書き込む
-        // @ts-ignore
         const stderr = $.NSFileHandle.fileHandleWithStandardError;
-        // @ts-ignore
         const errorData = $.NSString.stringWithUTF8String(`スクリプトの実行中に予期せぬエラーが発生しました: ${e}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
-        // @ts-ignore
         stderr.writeData(errorData);
         // 必要に応じて終了ステータスを設定
         // $.exit(1);

@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 
@@ -43,9 +42,7 @@ function listFoldersMain() {
    */
   function getOmniFocusApp(): any {
       try {
-          // @ts-ignore
           const app = Application('OmniFocus');
-          // @ts-ignore
           app.includeStandardAdditions = true;
           return app;
       } catch (e) {
@@ -57,9 +54,7 @@ function listFoldersMain() {
   // メイン処理
   try {
     const app = getOmniFocusApp();
-    // @ts-ignore
     const doc = app.defaultDocument;
-    // @ts-ignore
     const topLevelFolders = doc.folders();
 
     let allFolderLines: string[] = [];
@@ -75,21 +70,15 @@ function listFoldersMain() {
     if (allFolderLines.length > 0) {
       const resultString = allFolderLines.join("\n");
 
-      // @ts-ignore
       const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
-      // @ts-ignore
       const data = $.NSString.stringWithUTF8String(resultString).dataUsingEncoding($.NSUTF8StringEncoding);
-      // @ts-ignore
       stdout.writeData(data);
     } else {
       console.log("処理対象のフォルダがありませんでした。");
     }
   } catch (e) {
-    // @ts-ignore
     const stderr = $.NSFileHandle.fileHandleWithStandardError;
-    // @ts-ignore
     const errorData = $.NSString.stringWithUTF8String(`スクリプトの実行中に予期せぬエラーが発生しました: ${e}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
-    // @ts-ignore
     stderr.writeData(errorData);
   }
 }

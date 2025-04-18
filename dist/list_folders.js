@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 function listFoldersMain() {
@@ -40,9 +39,7 @@ function listFoldersMain() {
      */
     function getOmniFocusApp() {
         try {
-            // @ts-ignore
             const app = Application('OmniFocus');
-            // @ts-ignore
             app.includeStandardAdditions = true;
             return app;
         }
@@ -54,9 +51,7 @@ function listFoldersMain() {
     // メイン処理
     try {
         const app = getOmniFocusApp();
-        // @ts-ignore
         const doc = app.defaultDocument;
-        // @ts-ignore
         const topLevelFolders = doc.folders();
         let allFolderLines = [];
         if (topLevelFolders && topLevelFolders.length > 0) {
@@ -69,11 +64,8 @@ function listFoldersMain() {
         }
         if (allFolderLines.length > 0) {
             const resultString = allFolderLines.join("\n");
-            // @ts-ignore
             const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
-            // @ts-ignore
             const data = $.NSString.stringWithUTF8String(resultString).dataUsingEncoding($.NSUTF8StringEncoding);
-            // @ts-ignore
             stdout.writeData(data);
         }
         else {
@@ -81,11 +73,8 @@ function listFoldersMain() {
         }
     }
     catch (e) {
-        // @ts-ignore
         const stderr = $.NSFileHandle.fileHandleWithStandardError;
-        // @ts-ignore
         const errorData = $.NSString.stringWithUTF8String(`スクリプトの実行中に予期せぬエラーが発生しました: ${e}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
-        // @ts-ignore
         stderr.writeData(errorData);
     }
 }

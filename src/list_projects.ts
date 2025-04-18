@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 
@@ -59,18 +58,13 @@ function listProjectsMain() {
   }
 
   // メイン処理
-  // @ts-ignore
   const app = Application('OmniFocus');
-  // @ts-ignore
   app.includeStandardAdditions = true;
-  // @ts-ignore
   const doc = app.defaultDocument;
-  // @ts-ignore
   const projects = doc.flattenedProjects();
 
   const lines: string[] = [];
 
-  // @ts-ignore
   for (const p of projects) {
     let status = "";
     try {
