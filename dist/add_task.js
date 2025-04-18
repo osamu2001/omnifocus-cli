@@ -3,27 +3,26 @@
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 function addTaskMain() {
-    /**
-     * コマンドライン引数を取得します
-     */
-    function getCommandLineArguments() {
-        const args = [];
-        if (typeof $.NSProcessInfo !== "undefined") {
-            const nsArgs = $.NSProcessInfo.processInfo.arguments;
-            for (let i = 0; i < nsArgs.count; i++) {
-                args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-            }
-            return args.slice(2);
+    function getTaskNameFromArgs() {
+        if (typeof $.NSProcessInfo === "undefined") {
+            return "";
         }
-        return args;
+        const nsArgs = $.NSProcessInfo.processInfo.arguments;
+        const allArgs = Array.from({ length: nsArgs.count }, (_, i) => ObjC.unwrap(nsArgs.objectAtIndex(i)));
+        // スクリプト名を見つける（通常は4番目の引数）
+        // スクリプト名の後の引数がユーザーの実際の引数
+        const scriptNameIndex = Math.min(3, allArgs.length - 1); // 安全のため
+        // スクリプト名の後の引数を返す（あれば）
+        if (scriptNameIndex + 1 < allArgs.length) {
+            const userArgs = allArgs.slice(scriptNameIndex + 1);
+            return userArgs[userArgs.length - 1]; // 最後の引数をタスク名として返す
+        }
+        // ユーザー指定の引数がない場合は空文字列を返す
+        return "";
     }
-    /**
-     * 指定された名前のタスクをOmniFocusのインボックスに追加します
-     * @param taskName 追加するタスクの名前
-     */
     function addTaskToInbox(taskName) {
         if (!taskName) {
-            console.log("タスク名が指定されていません。");
+            console.log("エラー: タスク名が指定されていません。");
             return;
         }
         try {
@@ -34,12 +33,16 @@ function addTaskMain() {
             inbox.push(app.InboxTask({ name: taskName }));
         }
         catch (e) {
-            console.error(`タスクの追加中にエラーが発生しました: ${e}`);
+            // JXA環境では console.error の代わりに console.log を使用
+            console.log(`エラー: タスクの追加中にエラーが発生しました: ${e}`);
         }
     }
-    // メイン処理
-    const cliArgs = getCommandLineArguments();
-    const taskName = cliArgs.length > 0 ? cliArgs[cliArgs.length - 1] : "名称未設定タスク (TS)";
+    const taskName = getTaskNameFromArgs();
+    if (!taskName || taskName.trim() === "") {
+        console.log("エラー: タスク名を指定してください。");
+        $.exit(1);
+        return;
+    }
     addTaskToInbox(taskName);
 }
 addTaskMain();
