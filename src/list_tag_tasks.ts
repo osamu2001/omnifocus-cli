@@ -13,11 +13,11 @@ ObjC.import('stdlib');
 function listTagTasksMain() {
   /**
    * コマンドライン引数からタグIDを取得します
-   * @returns タグID（指定がない場合はnull）
+   * @returns タグID（指定がない場合は空文字列）
    */
-  function getTagIDFromArgs(): string | null {
+  function getTagIDFromArgs(): string {
     if (typeof $.NSProcessInfo === "undefined") {
-      return null;
+      return "";
     }
     
     const nsArgs = $.NSProcessInfo.processInfo.arguments;
@@ -32,20 +32,20 @@ function listTagTasksMain() {
     // スクリプト名の後の引数を返す（あれば）
     if (scriptNameIndex + 1 < allArgs.length) {
       const userArgs = allArgs.slice(scriptNameIndex + 1);
-      return userArgs[0] || null; // 最初の引数をタグIDとして返す
+      return userArgs[0] || ""; // 最初の引数をタグIDとして返す
     }
     
-    // ユーザー指定の引数がない場合はnullを返す
-    return null;
+    // ユーザー指定の引数がない場合は空文字列を返す
+    return "";
   }
 
   /**
    * タスクが指定されたタグ条件に一致するか確認します
    * @param task 確認対象のタスク
-   * @param tagId 検索するタグID（nullの場合はタグなしタスクを検索）
+   * @param tagId 検索するタグID（空文字列の場合はタグなしタスクを検索）
    * @returns 条件に一致する場合はtrue
    */
-  function matchesTagCondition(task: OmniFocusTask, tagId: string | null): boolean {
+  function matchesTagCondition(task: OmniFocusTask, tagId: string): boolean {
     try {
       // タグの取得
       const tags = task.tags();
@@ -68,7 +68,7 @@ function listTagTasksMain() {
    * @param tagId 検索するタグID
    * @returns 表示条件に一致する場合はtrue
    */
-  function isDisplayableTask(task: OmniFocusTask, tagId: string | null): boolean {
+  function isDisplayableTask(task: OmniFocusTask, tagId: string): boolean {
     try {
       // 完了済みのタスクは除外
       if (task.completed()) return false;
@@ -93,7 +93,7 @@ function listTagTasksMain() {
    * @param tagId 検索するタグID
    * @param results 結果を格納する配列
    */
-  function collectMatchingTasks(tasks: OmniFocusTask[], tagId: string | null, results: string[]): void {
+  function collectMatchingTasks(tasks: OmniFocusTask[], tagId: string, results: string[]): void {
     for (const task of tasks) {
       try {
         if (isDisplayableTask(task, tagId)) {
