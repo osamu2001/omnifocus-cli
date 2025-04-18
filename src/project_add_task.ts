@@ -8,6 +8,51 @@ ObjC.import('stdlib');
  * @returns 処理結果（JXAは戻り値が標準出力に出力される）
  */
 function projectAddTaskMain() {
+  /**
+   * コマンドライン引数を取得する
+   * @returns 引数の配列
+   */
+  function getArgsFromCommandLine(): string[] {
+    const args: string[] = [];
+    if (typeof $.NSProcessInfo !== "undefined") {
+      const nsArgs = $.NSProcessInfo.processInfo.arguments;
+      for (let i = 0; i < nsArgs.count; i++) {
+        args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
+      }
+    }
+    return args;
+  }
+
+  /**
+   * プロジェクトIDからプロジェクトを検索する
+   * @param doc OmniFocusドキュメント
+   * @param projectID 検索するプロジェクトID
+   * @returns 見つかったプロジェクト、または null
+   */
+  function findProjectById(doc: any, projectID: string): any {
+    // 最上位のプロジェクトから検索
+    const projects = doc.projects();
+    for (let i = 0; i < projects.length; i++) {
+      if (projects[i].id() === projectID) {
+        return projects[i];
+      }
+    }
+    
+    // フォルダ内のプロジェクトも検索
+    const folders = doc.folders();
+    for (let i = 0; i < folders.length; i++) {
+      const folderProjects = folders[i].projects();
+      for (let j = 0; j < folderProjects.length; j++) {
+        if (folderProjects[j].id() === projectID) {
+          return folderProjects[j];
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  // メイン処理開始
   // コマンドライン引数を取得
   const args = getArgsFromCommandLine();
   const scriptName = args[0]?.split('/').pop() || 'project_add_task.ts';
@@ -47,50 +92,6 @@ function projectAddTaskMain() {
     console.log(`エラー: ${e}`);
     $.exit(1);
   }
-}
-
-/**
- * コマンドライン引数を取得する
- * @returns 引数の配列
- */
-function getArgsFromCommandLine(): string[] {
-  const args: string[] = [];
-  if (typeof $.NSProcessInfo !== "undefined") {
-    const nsArgs = $.NSProcessInfo.processInfo.arguments;
-    for (let i = 0; i < nsArgs.count; i++) {
-      args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-    }
-  }
-  return args;
-}
-
-/**
- * プロジェクトIDからプロジェクトを検索する
- * @param doc OmniFocusドキュメント
- * @param projectID 検索するプロジェクトID
- * @returns 見つかったプロジェクト、または null
- */
-function findProjectById(doc: any, projectID: string): any {
-  // 最上位のプロジェクトから検索
-  const projects = doc.projects();
-  for (let i = 0; i < projects.length; i++) {
-    if (projects[i].id() === projectID) {
-      return projects[i];
-    }
-  }
-  
-  // フォルダ内のプロジェクトも検索
-  const folders = doc.folders();
-  for (let i = 0; i < folders.length; i++) {
-    const folderProjects = folders[i].projects();
-    for (let j = 0; j < folderProjects.length; j++) {
-      if (folderProjects[j].id() === projectID) {
-        return folderProjects[j];
-      }
-    }
-  }
-  
-  return null;
 }
 
 projectAddTaskMain();
