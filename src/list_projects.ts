@@ -3,107 +3,123 @@
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 
+/**
+ * OmniFocusのプロジェクト一覧を表示する
+ * 出力形式: プロジェクトID\tフォルダパス/プロジェクト名
+ */
 function listProjectsMain() {
   /**
-   * オブジェクトが欠損値かどうかを判定します
-   * @param obj 判定対象のオブジェクト
-   * @returns 欠損値であればtrue、そうでなければfalse
+   * OmniFocusオブジェクトが有効かチェックする
+   * @param obj 検証するオブジェクト
+   * @returns 有効ならtrue、無効ならfalse
    */
-  function isMissingValue(obj: any): boolean {
+  function isValidObject(obj: any): boolean {
+    if (!obj) return false;
+    
     try {
-      if (ObjC.unwrap(obj) === undefined) return true;
-    } catch (e) {}
-    if (!obj) return true;
-    if (typeof obj === 'object' && obj.toString && obj.toString() === '[object Reference]') return true;
-    return false;
+      // Objectiveベースのオブジェクト参照の検証
+      if (typeof obj === 'object' && obj.toString && obj.toString() === '[object Reference]') {
+        return false;
+      }
+      
+      // unwrapしたときにundefinedになるものは無効
+      if (ObjC.unwrap(obj) === undefined) {
+        return false;
+      }
+      
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**
-   * フォルダの完全なパスを取得します
+   * フォルダの完全なパスを取得する
    * @param folder フォルダオブジェクト
    * @returns フォルダの完全なパス
    */
   function getFullFolderPath(folder: any): string {
-    if (!folder || typeof folder.name !== "function" || isMissingValue(folder)) return "";
-    
-    let parent = null;
-    try {
-      parent = folder.container();
-      if (isMissingValue(parent)) parent = null;
-    } catch (e) {
-      parent = null;
+    // フォルダが無効なら空文字を返す
+    if (!isValidObject(folder) || typeof folder.name !== "function") {
+      return "";
     }
     
-    let isParentFolder = false;
     try {
-      isParentFolder = parent && typeof parent.class === "function" && parent.class() === "folder";
-    } catch (e) {
-      isParentFolder = false;
-    }
-    
-    if (isParentFolder) {
+      let folderName = folder.name();
+      
+      // 親フォルダを取得
+      let parent: any = null;
+      try {
+        parent = folder.container();
+      } catch (e) {
+        return folderName;
+      }
+      
+      // 親がフォルダでなければ現在のフォルダ名を返す
+      if (!isValidObject(parent) || 
+          typeof parent.class !== "function" || 
+          parent.class() !== "folder") {
+        return folderName;
+      }
+      
+      // 親フォルダのパスを再帰的に取得
       let parentPath = getFullFolderPath(parent);
-      try {
-        return parentPath ? `${parentPath}/${folder.name()}` : folder.name();
-      } catch (e) {
-        return "";
-      }
-    } else {
-      try {
-        return folder.name();
-      } catch (e) {
-        return "";
-      }
+      return parentPath ? `${parentPath}/${folderName}` : folderName;
+    } catch (e) {
+      return "";
     }
   }
 
-  // メイン処理
-  const app = Application('OmniFocus');
-  app.includeStandardAdditions = true;
-  const doc = app.defaultDocument;
-  const projects = doc.flattenedProjects();
+  try {
+    // OmniFocusアプリケーションの取得
+    const app = Application('OmniFocus') as OmniFocusApplication;
+    app.includeStandardAdditions = true;
+    const doc = app.defaultDocument;
+    
+    // プロジェクト一覧の取得
+    const projects = doc.flattenedProjects();
+    const lines: string[] = [];
 
-  const lines: string[] = [];
-
-  for (const p of projects) {
-    let status = "";
-    try {
-      status = p.status();
-    } catch (e) {
-      continue;
-    }
-
-    if (status !== "completed" && status !== "dropped" && status !== "done status") {
-      let projectName = "";
-      let projectID = "";
+    // 各プロジェクトの情報を収集
+    for (const project of projects) {
       try {
-        projectName = p.name();
-        projectID = p.id();
-      } catch (e) {
-        continue;
-      }
-      
-      let folder = null;
-      try {
-        folder = p.folder();
-        if (isMissingValue(folder) || !folder || typeof folder.name !== "function") {
-          folder = null;
+        // 完了・ドロップ済みのプロジェクトは除外
+        const status = project.status();
+        if (status === "completed" || status === "dropped" || status === "done status") {
+          continue;
+        }
+        
+        // プロジェクト名とIDを取得
+        const projectName = project.name();
+        const projectID = project.id();
+        
+        // フォルダの取得と処理
+        try {
+          const folder: any = project.folder();
+          
+          // フォルダが有効であればパスを取得
+          if (isValidObject(folder)) {
+            const folderPath = getFullFolderPath(folder);
+            lines.push(`${projectID}\t${folderPath}/${projectName}`);
+          } else {
+            // フォルダがなければプロジェクト名のみ表示
+            lines.push(`${projectID}\t${projectName}`);
+          }
+        } catch (e) {
+          // フォルダ取得エラーの場合はプロジェクト名のみ表示
+          lines.push(`${projectID}\t${projectName}`);
         }
       } catch (e) {
-        folder = null;
-      }
-      
-      let folderPath = "";
-      if (folder) {
-        folderPath = getFullFolderPath(folder);
-        lines.push(`${projectID}\t${folderPath}/${projectName}`);
-      } else {
-        lines.push(`${projectID}\t${projectName}`);
+        // このプロジェクトの処理中にエラーが発生したらスキップ
+        continue;
       }
     }
-  }
 
-  return lines.join("\n");
+    return lines.join("\n");
+  } catch (e) {
+    console.log(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    return "";
+  }
 }
 
 listProjectsMain();
