@@ -2,6 +2,10 @@
 "use strict";
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
+/**
+ * OmniFocusのタグを一覧表示する
+ * @returns タグ一覧の文字列（ID、パス）
+ */
 function listTagsMain() {
     /**
      * タグを再帰的にリストアップする関数
@@ -26,41 +30,31 @@ function listTagsMain() {
             }
         }
         catch (e) {
-            // エラー処理
+            // エラーが発生した場合は空の結果を返す
+            console.log(`タグ処理中にエラー: ${e}`);
         }
         return results;
     }
-    /**
-     * OmniFocusアプリケーションのインスタンスを取得する
-     * @returns OmniFocusアプリケーションのインスタンス
-     */
-    function getOmniFocusApp() {
+    try {
+        // OmniFocusを起動し、タグ一覧を取得
         const app = Application('OmniFocus');
         app.includeStandardAdditions = true;
-        return app;
-    }
-    // メイン処理
-    try {
-        const app = getOmniFocusApp();
         const doc = app.defaultDocument;
         const topLevelTags = doc.tags();
         let allTagLines = [];
+        // トップレベルタグがあれば再帰的に処理
         if (topLevelTags && topLevelTags.length > 0) {
             for (const topTag of topLevelTags) {
                 allTagLines.push(...listTagsRecursive(topTag, ""));
             }
         }
-        if (allTagLines.length > 0) {
-            const resultString = allTagLines.join("\n");
-            const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
-            const data = $.NSString.stringWithUTF8String(resultString).dataUsingEncoding($.NSUTF8StringEncoding);
-            stdout.writeData(data);
-        }
+        // 結果を返す（JXAは return の値が標準出力に出力される）
+        return allTagLines.join("\n");
     }
     catch (e) {
-        const stderr = $.NSFileHandle.fileHandleWithStandardError;
-        const errorData = $.NSString.stringWithUTF8String(`スクリプトの実行中にエラー: ${e}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
-        stderr.writeData(errorData);
+        // エラーメッセージを表示して終了
+        console.log(`エラー: ${e}`);
+        $.exit(1);
     }
 }
 listTagsMain();

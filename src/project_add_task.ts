@@ -3,74 +3,94 @@
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 
+/**
+ * 指定したプロジェクトにタスクを追加する
+ * @returns 処理結果（JXAは戻り値が標準出力に出力される）
+ */
 function projectAddTaskMain() {
   // コマンドライン引数を取得
-  const args = [];
+  const args = getArgsFromCommandLine();
+  const scriptName = args[0]?.split('/').pop() || 'project_add_task.ts';
+  
+  // 4番目と5番目の引数を使用（osascriptの仕様上、最初の引数はスクリプト自体）
+  const projectID = args[4];
+  const taskName = args[5];
+  
+  if (!projectID || !taskName) {
+    console.log(`使用法: ${scriptName} <projectID> <taskName>`);
+    $.exit(1);
+    return null;
+  }
+  
+  try {
+    // OmniFocusアプリケーションを起動
+    const app = Application("OmniFocus") as any;
+    app.includeStandardAdditions = true;
+    const doc = app.defaultDocument;
+    
+    // ID指定でプロジェクトを検索
+    const targetProject = findProjectById(doc, projectID);
+    
+    if (!targetProject) {
+      console.log(`エラー: プロジェクトが見つかりません: ${projectID}`);
+      $.exit(1);
+      return null;
+    }
+    
+    // タスクを追加
+    targetProject.tasks.push(app.Task({name: taskName}));
+    
+    // 成功時には何も表示しない
+    $.exit(0);
+    // returnステートメントを書かないことで出力を抑制
+  } catch (e) {
+    console.log(`エラー: ${e}`);
+    $.exit(1);
+  }
+}
+
+/**
+ * コマンドライン引数を取得する
+ * @returns 引数の配列
+ */
+function getArgsFromCommandLine(): string[] {
+  const args: string[] = [];
   if (typeof $.NSProcessInfo !== "undefined") {
     const nsArgs = $.NSProcessInfo.processInfo.arguments;
     for (let i = 0; i < nsArgs.count; i++) {
       args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
     }
   }
-  
-  const projectID = args[4];
-  const taskName = args[5];
-  
-  if (!projectID || !taskName) {
-    console.log("Usage: project_add_task.ts <projectID> <taskName>");
-    $.exit(1);
-    return null;
+  return args;
+}
+
+/**
+ * プロジェクトIDからプロジェクトを検索する
+ * @param doc OmniFocusドキュメント
+ * @param projectID 検索するプロジェクトID
+ * @returns 見つかったプロジェクト、または null
+ */
+function findProjectById(doc: any, projectID: string): any {
+  // 最上位のプロジェクトから検索
+  const projects = doc.projects();
+  for (let i = 0; i < projects.length; i++) {
+    if (projects[i].id() === projectID) {
+      return projects[i];
+    }
   }
   
-  try {
-    const app = Application("OmniFocus");
-    app.includeStandardAdditions = true;
-    const doc = app.defaultDocument;
-    
-    // プロジェクトを検索
-    let targetProject = null;
-    const projects = doc.projects();
-    
-    for (let i = 0; i < projects.length; i++) {
-      if (projects[i].id() === projectID) {
-        targetProject = projects[i];
-        break;
+  // フォルダ内のプロジェクトも検索
+  const folders = doc.folders();
+  for (let i = 0; i < folders.length; i++) {
+    const folderProjects = folders[i].projects();
+    for (let j = 0; j < folderProjects.length; j++) {
+      if (folderProjects[j].id() === projectID) {
+        return folderProjects[j];
       }
     }
-    
-    if (!targetProject) {
-      // フォルダ内も検索
-      const folders = doc.folders();
-      for (let i = 0; i < folders.length; i++) {
-        const folderProjects = folders[i].projects();
-        for (let j = 0; j < folderProjects.length; j++) {
-          if (folderProjects[j].id() === projectID) {
-            targetProject = folderProjects[j];
-            break;
-          }
-        }
-        if (targetProject) break;
-      }
-    }
-    
-    if (!targetProject) {
-      console.log("Error: Project not found: " + projectID);
-      $.exit(1);
-      return null;
-    }
-    
-    // タスクを追加
-    const project = targetProject;
-    project.tasks.push(app.Task({name: taskName}));
-    
-    // 成功
-    $.exit(0);
-    return null;
-  } catch (e: any) {
-    console.log("Error: " + e.message);
-    $.exit(1);
-    return null;
   }
+  
+  return null;
 }
 
 projectAddTaskMain();
