@@ -4,9 +4,6 @@
 ObjC.import('stdlib');
 
 function addProjectMain() {
-  /**
-   * コマンドライン引数を取得します
-   */
   function getCommandLineArguments(): string[] {
     const args: string[] = [];
     if (typeof $.NSProcessInfo !== "undefined") {
@@ -19,29 +16,32 @@ function addProjectMain() {
     return args;
   }
 
-  /**
-   * 指定されたIDのプロジェクトを追加します
-   * @param projectID 追加するプロジェクトのID
-   */
-  function addProject(projectID: string): void {
-    if (!projectID) {
-      console.log("プロジェクトIDが指定されていません。");
-      return;
-    }
+  function addProject(projectName: string): void {
     try {
       const app = Application('OmniFocus');
       app.includeStandardAdditions = true;
       const doc = app.defaultDocument;
-      doc.projects.push(app.Project({ name: projectID }));
+      doc.projects.push(app.Project({ name: projectName }));
     } catch (e) {
       console.error(`プロジェクト追加中にエラー: ${e}`);
     }
   }
 
-  // メイン処理
   const cliArgs = getCommandLineArguments();
-  const projectID = cliArgs.length > 0 ? cliArgs[cliArgs.length - 1] : "名称未設定プロジェクト (TS)";
-  addProject(projectID);
+  if (cliArgs.length === 0) {
+    console.error("エラー: プロジェクト名を指定してください。");
+    $.exit(1);
+    return;
+  }
+  
+  const projectName = cliArgs[cliArgs.length - 1];
+  if (!projectName || projectName.trim() === "") {
+    console.error("エラー: プロジェクト名が空です。");
+    $.exit(1);
+    return;
+  }
+  
+  addProject(projectName);
 }
 
 addProjectMain();
