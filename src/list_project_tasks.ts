@@ -3,10 +3,15 @@
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 
+/**
+ * 指定されたプロジェクトIDに含まれる未完了タスクを一覧表示する
+ * 使用例: ./dist/list_project_tasks.js プロジェクトID
+ * 出力形式: タスクID\tタスク名
+ */
 function listProjectTasksMain() {
   /**
    * コマンドライン引数を取得します
-   * @returns {string[]} コマンドライン引数の配列
+   * @returns コマンドライン引数の配列
    */
   function getCommandLineArguments(): string[] {
     const args: string[] = [];
@@ -15,18 +20,9 @@ function listProjectTasksMain() {
       for (let i = 0; i < nsArgs.count; i++) {
         args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
       }
-      return args.slice(4);
+      return args.slice(4); // スクリプト名などをスキップ
     }
     return args;
-  }
-
-  /**
-   * プロジェクトIDが有効かどうかを検証します
-   * @param projectId プロジェクトID
-   * @returns プロジェクトIDが有効な場合はtrue、そうでない場合はfalse
-   */
-  function validateProjectId(projectId: string): boolean {
-    return typeof projectId === "string" && projectId.trim().length > 0;
   }
 
   /**
@@ -35,7 +31,7 @@ function listProjectTasksMain() {
    * @param projectId 検索対象のプロジェクトID
    * @returns 見つかったプロジェクト、見つからない場合はnull
    */
-  function findProjectById(doc: any, projectId: string): any | null {
+  function findProjectById(doc: OmniFocusDocument, projectId: string): OmniFocusProject | null {
     // トップレベルのプロジェクトを検索
     const topProjects = doc.projects();
     for (const p of topProjects) {
@@ -45,7 +41,7 @@ function listProjectTasksMain() {
     }
     
     // フォルダ内のプロジェクトを再帰的に検索
-    function searchFolders(folders: any[]): any | null {
+    function searchFolders(folders: OmniFocusFolder[]): OmniFocusProject | null {
       for (const folder of folders) {
         const projects = folder.projects();
         for (const p of projects) {
@@ -53,71 +49,97 @@ function listProjectTasksMain() {
             return p;
           }
         }
+        
+        // サブフォルダを検索
         const subfolders = folder.folders();
         const found = searchFolders(subfolders);
         if (found) return found;
       }
       return null;
     }
+    
     return searchFolders(doc.folders());
+  }
+
+  /**
+   * プロジェクト内の未完了タスクを収集します
+   * @param project 対象プロジェクト
+   * @returns タスク情報の配列
+   */
+  function collectIncompleteTasks(project: OmniFocusProject): string[] {
+    const output: string[] = [];
+    
+    // flattenedTasksメソッドが利用可能ならそちらを使用（より効率的）
+    if (typeof project.flattenedTasks === "function") {
+      try {
+        const tasks = project.flattenedTasks();
+        for (const task of tasks) {
+          if (!task.completed()) {
+            output.push(`${task.id()}\t${task.name()}`);
+          }
+        }
+      } catch (e) {
+        // 例外を無視して処理継続
+      }
+    } 
+    // 再帰的にタスクを収集
+    else if (typeof project.tasks === "function") {
+      function collectTasksRecursively(tasks: OmniFocusTask[]): void {
+        for (const task of tasks) {
+          try {
+            if (!task.completed()) {
+              output.push(`${task.id()}\t${task.name()}`);
+              
+              // サブタスクがあれば再帰的に処理
+              if (typeof task.tasks === "function") {
+                collectTasksRecursively(task.tasks());
+              }
+            }
+          } catch (e) {
+            // 例外を無視して次のタスクへ
+          }
+        }
+      }
+      
+      try {
+        collectTasksRecursively(project.tasks());
+      } catch (e) {
+        // 例外を無視して処理継続
+      }
+    }
+    
+    return output;
   }
 
   // メイン処理
   const args = getCommandLineArguments();
   const projectId = args[0];
-  let result = null;
-
-  if (!validateProjectId(projectId)) {
+  
+  // 引数チェック
+  if (!projectId || projectId.trim().length === 0) {
     console.log("Error: projectId not found or invalid");
-  } else {
-    try {
-      const app = Application('OmniFocus');
-      app.includeStandardAdditions = true;
-      const doc = app.defaultDocument;
-
-      const project = findProjectById(doc, projectId);
-      if (!project) {
-        console.log("Error: project not found");
-      } else {
-        const output: string[] = [];
-        try {
-          if (typeof project.flattenedTasks === "function") {
-            const tasks = project.flattenedTasks();
-            for (const t of tasks) {
-              try {
-                if (!t.completed()) {
-                  output.push(`${t.id()}\t${t.name()}`);
-                }
-              } catch (e: any) {}
-            }
-          } else if (typeof project.tasks === "function") {
-            /**
-             * タスクを再帰的に収集します
-             * @param tasks タスクの配列
-             * @param output 出力用の配列
-             */
-            function collectIncompleteTasks(tasks: any[], output: string[]): void {
-              for (const t of tasks) {
-                try {
-                  if (!t.completed()) {
-                    output.push(`${t.id()}\t${t.name()}`);
-                    if (typeof t.tasks === "function") {
-                      collectIncompleteTasks(t.tasks(), output);
-                    }
-                  }
-                } catch (e: any) {}
-              }
-            }
-            collectIncompleteTasks(project.tasks(), output);
-          }
-        } catch (e: any) {}
-        result = output.join("\n");
-      }
-    } catch (e: any) {
-      console.log("Error: " + e.message);
-    }
+    return null;
   }
-  return result;
+  
+  try {
+    const app = Application('OmniFocus') as OmniFocusApplication;
+    app.includeStandardAdditions = true;
+    const doc = app.defaultDocument;
+
+    // プロジェクト検索
+    const project = findProjectById(doc, projectId);
+    if (!project) {
+      console.log("Error: project not found");
+      return null;
+    }
+    
+    // タスク収集
+    const tasks = collectIncompleteTasks(project);
+    return tasks.join("\n");
+  } catch (e) {
+    console.log(`Error: ${e instanceof Error ? e.message : String(e)}`);
+    return null;
+  }
 }
 
 listProjectTasksMain();
