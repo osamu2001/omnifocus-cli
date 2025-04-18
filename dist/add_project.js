@@ -8,8 +8,16 @@ function addProjectMain() {
             return [];
         }
         const nsArgs = $.NSProcessInfo.processInfo.arguments;
-        const args = Array.from({ length: nsArgs.count }, (_, i) => ObjC.unwrap(nsArgs.objectAtIndex(i)));
-        return args.slice(2);
+        const allArgs = Array.from({ length: nsArgs.count }, (_, i) => ObjC.unwrap(nsArgs.objectAtIndex(i)));
+        // スクリプト名を見つける（通常は4番目の引数）
+        // スクリプト名の後の引数がユーザーの実際の引数
+        const scriptNameIndex = Math.min(3, allArgs.length - 1); // 安全のため
+        // スクリプト名の後の引数を返す（あれば）
+        if (scriptNameIndex + 1 < allArgs.length) {
+            return allArgs.slice(scriptNameIndex + 1);
+        }
+        // ユーザー指定の引数がない場合は空配列を返す
+        return [];
     }
     function addProject(projectName) {
         try {
@@ -23,14 +31,16 @@ function addProjectMain() {
         }
     }
     const cliArgs = getCommandLineArguments();
+    // 引数の最後の要素をプロジェクト名として使用
     if (cliArgs.length === 0) {
-        console.error("エラー: プロジェクト名を指定してください。");
+        // JXA環境では console.error の代わりに console.log を使用
+        console.log("エラー: プロジェクト名を指定してください。");
         $.exit(1);
         return;
     }
     const projectName = cliArgs[cliArgs.length - 1];
     if (!projectName || projectName.trim() === "") {
-        console.error("エラー: プロジェクト名が空です。");
+        console.log("エラー: プロジェクト名が空です。");
         $.exit(1);
         return;
     }
