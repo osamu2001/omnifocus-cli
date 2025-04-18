@@ -68,6 +68,7 @@ interface OmniFocusFolder {
   name(): string;
   container(): OmniFocusFolder | null;
   class(): string;
+  folders(): OmniFocusFolder[];
 }
 
 // OmniFocusのパースペクティブ型定義
@@ -82,6 +83,7 @@ interface OmniFocusDocument {
   flattenedProjects(): OmniFocusProject[];
   perspectives(): OmniFocusPerspective[];
   inboxTasks(): OmniFocusTask[];
+  folders(): OmniFocusFolder[];
 }
 
 // OmniFocusアプリケーション型定義

@@ -1,6 +1,5 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
-// @ts-nocheck
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 /**
@@ -39,9 +38,9 @@ function listFoldersRecursive(folder, parentPath) {
  */
 function getOmniFocusApp() {
     try {
-        const app = Application('OmniFocus');
-        app.includeStandardAdditions = true;
-        return app;
+        const omnifocusApp = Application('OmniFocus');
+        omnifocusApp.includeStandardAdditions = true;
+        return omnifocusApp;
     }
     catch (e) {
         console.error("OmniFocus アプリケーションが見つかりません。");
@@ -49,31 +48,35 @@ function getOmniFocusApp() {
     }
 }
 // メイン処理
-try {
-    const app = getOmniFocusApp();
-    const doc = app.defaultDocument;
-    const topLevelFolders = doc.folders();
-    let allFolderLines = [];
-    if (topLevelFolders && topLevelFolders.length > 0) {
-        for (const topFolder of topLevelFolders) {
-            allFolderLines.push(...listFoldersRecursive(topFolder, ""));
+function listFoldersMain() {
+    try {
+        const omnifocusApp = getOmniFocusApp();
+        const document = omnifocusApp.defaultDocument;
+        const topLevelFolders = document.folders();
+        let allFolderLines = [];
+        if (topLevelFolders && topLevelFolders.length > 0) {
+            for (const topFolder of topLevelFolders) {
+                allFolderLines.push(...listFoldersRecursive(topFolder, ""));
+            }
+        }
+        else {
+            console.log("トップレベルフォルダが見つかりません。");
+        }
+        if (allFolderLines.length > 0) {
+            const resultString = allFolderLines.join("\n");
+            const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
+            const data = $.NSString.stringWithUTF8String(resultString).dataUsingEncoding($.NSUTF8StringEncoding);
+            stdout.writeData(data);
+        }
+        else {
+            console.log("処理対象のフォルダがありませんでした。");
         }
     }
-    else {
-        console.log("トップレベルフォルダが見つかりません。");
-    }
-    if (allFolderLines.length > 0) {
-        const resultString = allFolderLines.join("\n");
-        const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
-        const data = $.NSString.stringWithUTF8String(resultString).dataUsingEncoding($.NSUTF8StringEncoding);
-        stdout.writeData(data);
-    }
-    else {
-        console.log("処理対象のフォルダがありませんでした。");
+    catch (e) {
+        const stderr = $.NSFileHandle.fileHandleWithStandardError;
+        const errorData = $.NSString.stringWithUTF8String(`スクリプトの実行中に予期せぬエラーが発生しました: ${e}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
+        stderr.writeData(errorData);
     }
 }
-catch (e) {
-    const stderr = $.NSFileHandle.fileHandleWithStandardError;
-    const errorData = $.NSString.stringWithUTF8String(`スクリプトの実行中に予期せぬエラーが発生しました: ${e}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
-    stderr.writeData(errorData);
-}
+// メイン関数を実行
+listFoldersMain();
