@@ -1,6 +1,8 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
 // TypeScriptでJXA用の型を利用
+/// <reference path="./types/omnifocus.d.ts" />
+/// <reference path="./types/jxa.d.ts" />
 ObjC.import('stdlib');
 ObjC.import('Foundation');
 /**
@@ -11,20 +13,36 @@ function showProjectMain() {
     /**
      * コマンドライン引数からプロジェクトIDを取得する
      * @returns プロジェクトID
+     * @throws プロジェクトIDが見つからない場合にエラーメッセージを出力して終了
      */
     function getProjectIdFromArgs() {
-        if (typeof $.NSProcessInfo !== "undefined") {
-            const nsArgs = $.NSProcessInfo.processInfo.arguments;
-            // osascriptの仕様上、4番目の引数がプロジェクトID
-            return nsArgs.count > 4 ? ObjC.unwrap(nsArgs.objectAtIndex(4)) : '';
+        if (typeof $.NSProcessInfo === "undefined") {
+            console.log("NSProcessInfoが利用できません");
+            $.exit(1);
         }
-        return '';
+        const nsArgs = $.NSProcessInfo.processInfo.arguments;
+        const allArgs = Array.from({ length: nsArgs.count }, (_, i) => ObjC.unwrap(nsArgs.objectAtIndex(i)));
+        // スクリプト名を見つける（通常は4番目の引数）
+        // スクリプト名の後の引数がユーザーの実際の引数
+        const scriptNameIndex = Math.min(3, allArgs.length - 1); // 安全のため
+        // スクリプト名の後の引数を返す（あれば）
+        if (scriptNameIndex + 1 < allArgs.length) {
+            const userArgs = allArgs.slice(scriptNameIndex + 1);
+            const projectId = userArgs[0];
+            if (projectId && projectId.trim() !== "") {
+                return projectId;
+            }
+        }
+        // プロジェクトIDが指定されていない場合はエラーメッセージを表示して終了
+        console.log("使用法: show_project <projectId>");
+        $.exit(1);
     }
     /**
      * IDからプロジェクトを検索する
      * @param doc OmniFocusドキュメント
      * @param projectId 検索するプロジェクトID
-     * @returns 見つかったプロジェクト、または null
+     * @returns 見つかったプロジェクト
+     * @throws プロジェクトが見つからない場合にエラーメッセージを出力して終了
      */
     function findProjectById(doc, projectId) {
         try {
@@ -41,12 +59,15 @@ function showProjectMain() {
                     continue;
                 }
             }
+            // プロジェクトが見つからなかった場合
+            console.log(`プロジェクトが見つかりません: ${projectId}`);
+            $.exit(1);
         }
         catch (e) {
             // プロジェクト取得時にエラーが発生した場合
             console.log(`プロジェクト検索中にエラー: ${e}`);
+            $.exit(1);
         }
-        return null;
     }
     /**
      * プロジェクトの詳細情報を取得する
@@ -54,15 +75,11 @@ function showProjectMain() {
      * @returns プロジェクト情報のオブジェクト
      */
     function getProjectInfo(project) {
-        if (!project)
-            return null;
-        // プロジェクト情報の型定義
-        const info = {};
         // プロパティの安全な取得（エラーが発生しても処理を継続）
-        const safeGetProperty = (obj, propertyName, defaultValue = undefined) => {
+        const safeGetProperty = (obj, propertyName, defaultValue) => {
             try {
                 if (typeof obj[propertyName] === 'function') {
-                    return obj[propertyName]();
+                    return obj[propertyName]() || defaultValue;
                 }
                 else {
                     return obj[propertyName] || defaultValue;
@@ -72,90 +89,145 @@ function showProjectMain() {
                 return defaultValue;
             }
         };
+        // 基本情報の初期値を設定（エラー時のデフォルト値を含む）
+        const info = {
+            id: '',
+            name: '',
+            note: '',
+            completed: false,
+            flagged: false,
+            creationDate: new Date(),
+            modificationDate: new Date(),
+            dueDate: undefined,
+            priority: undefined,
+            parent: undefined,
+            childProjectCount: 0,
+            progress: undefined,
+            tags: []
+        };
         // 基本的なプロジェクト情報
         try {
             info.id = project.id();
         }
-        catch (e) { }
+        catch (e) { /* デフォルト値を使用 */ }
         try {
             info.name = project.name();
         }
-        catch (e) { }
+        catch (e) { /* デフォルト値を使用 */ }
         try {
             info.note = project.note();
         }
-        catch (e) { }
+        catch (e) { /* デフォルト値を使用 */ }
         try {
             info.completed = project.completed();
         }
-        catch (e) { }
+        catch (e) { /* デフォルト値を使用 */ }
         try {
             info.flagged = project.flagged();
         }
-        catch (e) { }
+        catch (e) { /* デフォルト値を使用 */ }
         try {
             info.creationDate = project.creationDate();
         }
-        catch (e) { }
+        catch (e) { /* デフォルト値を使用 */ }
         try {
             info.modificationDate = project.modificationDate();
         }
-        catch (e) { }
+        catch (e) { /* デフォルト値を使用 */ }
         // タグ情報
         try {
             const tags = project.tags();
             info.tags = [];
             for (let i = 0; i < tags.length; i++) {
                 info.tags.push({
-                    id: safeGetProperty(tags[i], 'id'),
-                    name: safeGetProperty(tags[i], 'name')
+                    id: safeGetProperty(tags[i], 'id', ''),
+                    name: safeGetProperty(tags[i], 'name', '')
                 });
             }
         }
         catch (e) {
-            info.tags = [];
+            // デフォルト値を使用
         }
         // 期日と優先度
-        info.dueDate = safeGetProperty(project, 'dueDate', null);
-        info.priority = safeGetProperty(project, 'effectivePriority', null);
+        try {
+            info.dueDate = project.dueDate();
+        }
+        catch (e) { /* デフォルト値を使用 */ }
+        try {
+            // 型定義にeffectivePriorityがないので、effectiveStatusから優先度を推定
+            const status = project.effectiveStatus();
+            // ステータスから優先度を推定（例：'active'→1, 'on hold'→0 など）
+            switch (status.toLowerCase()) {
+                case 'active':
+                    info.priority = 1;
+                    break;
+                case 'on hold':
+                    info.priority = 0;
+                    break;
+                case 'completed':
+                    info.priority = -1;
+                    break;
+                case 'dropped':
+                    info.priority = -2;
+                    break;
+                default: info.priority = undefined;
+            }
+        }
+        catch (e) { /* デフォルト値を使用 */ }
         // 親プロジェクト情報
         try {
-            const parent = safeGetProperty(project, 'parent', null);
-            if (parent) {
+            const folder = project.folder();
+            if (folder) {
                 info.parent = {
-                    id: safeGetProperty(parent, 'id', null),
-                    name: safeGetProperty(parent, 'name', null)
+                    id: safeGetProperty(folder, 'id', ''),
+                    name: safeGetProperty(folder, 'name', '')
                 };
             }
-            else {
-                info.parent = null;
-            }
         }
         catch (e) {
-            info.parent = null;
+            // デフォルト値を使用
         }
-        // 子プロジェクト数
+        // 子タスク数をchildProjectCountとして使用
         try {
-            const children = safeGetProperty(project, 'projects', []) || [];
-            info.childProjectCount = children.length;
+            const tasks = project.tasks();
+            info.childProjectCount = tasks ? tasks.length : 0;
         }
         catch (e) {
-            info.childProjectCount = 0;
+            // デフォルト値を使用
         }
         // プロジェクトの進捗状況（完了タスク / 全タスク）
         try {
-            const tasks = safeGetProperty(project, 'flattenedTasks', []) || [];
-            const totalTasks = tasks.length;
-            let completedTasks = 0;
-            for (let i = 0; i < totalTasks; i++) {
-                if (safeGetProperty(tasks[i], 'completed', false)) {
-                    completedTasks++;
+            // flattenedTasksメソッドが存在するか確認してから呼び出す
+            if (typeof project.flattenedTasks === 'function') {
+                const tasks = project.flattenedTasks();
+                if (tasks && tasks.length > 0) {
+                    const totalTasks = tasks.length;
+                    let completedTasks = 0;
+                    for (let i = 0; i < totalTasks; i++) {
+                        if (safeGetProperty(tasks[i], 'completed', false)) {
+                            completedTasks++;
+                        }
+                    }
+                    info.progress = totalTasks > 0 ? (completedTasks / totalTasks) : undefined;
                 }
             }
-            info.progress = totalTasks > 0 ? (completedTasks / totalTasks) : null;
+            else {
+                // flattenedTasksが使用できない場合はtasksメソッドで代用
+                const tasks = project.tasks();
+                if (tasks && tasks.length > 0) {
+                    const totalTasks = tasks.length;
+                    let completedTasks = 0;
+                    for (let i = 0; i < totalTasks; i++) {
+                        if (safeGetProperty(tasks[i], 'completed', false)) {
+                            completedTasks++;
+                        }
+                    }
+                    info.progress = totalTasks > 0 ? (completedTasks / totalTasks) : undefined;
+                }
+            }
         }
         catch (e) {
-            info.progress = null;
+            // デフォルト値を使用
         }
         return info;
     }

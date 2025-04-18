@@ -2,6 +2,7 @@
 "use strict";
 // OmniFocusの型をインポート
 /// <reference path="./types/omnifocus.d.ts" />
+/// <reference path="./types/jxa.d.ts" />
 // JXA環境のセットアップ
 ObjC.import('stdlib');
 ObjC.import('Foundation');
@@ -31,7 +32,10 @@ function showTaskMain() {
                 repetitionRule: task.repetitionRule(),
                 // containingTaskはstring型として定義されているが、実際にはOmniFocusTaskオブジェクトが返されるため、
                 // 型の不整合を避けるため直接nullを設定
-                containingTask: null
+                containingTask: null,
+                containingProject: null,
+                tags: [],
+                subtasks: []
             };
             // 親プロジェクト情報の取得
             try {
@@ -83,24 +87,31 @@ function showTaskMain() {
         }
     }
     /**
-     * コマンドライン引数を取得する
-     * @returns 引数の配列
+     * コマンドライン引数からタスクIDを取得する
+     * @returns タスクID
      */
-    function getCommandLineArguments() {
-        const args = [];
-        if (typeof $.NSProcessInfo !== "undefined") {
-            const nsArgs = $.NSProcessInfo.processInfo.arguments;
-            for (let i = 0; i < nsArgs.count; i++) {
-                args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-            }
+    function getTaskIdFromArgs() {
+        if (typeof $.NSProcessInfo === "undefined") {
+            return null;
         }
-        return args;
+        const nsArgs = $.NSProcessInfo.processInfo.arguments;
+        const allArgs = Array.from({ length: nsArgs.count }, (_, i) => ObjC.unwrap(nsArgs.objectAtIndex(i)));
+        // スクリプト名を見つける（通常は4番目の引数）
+        // スクリプト名の後の引数がユーザーの実際の引数
+        const scriptNameIndex = Math.min(3, allArgs.length - 1); // 安全のため
+        // スクリプト名の後の引数を返す（あれば）
+        if (scriptNameIndex + 1 < allArgs.length) {
+            const userArgs = allArgs.slice(scriptNameIndex + 1);
+            return userArgs[0] || null; // 最初の引数をタスクIDとして返す
+        }
+        return null;
     }
     // メイン処理
-    const args = getCommandLineArguments();
-    const taskId = args[4] || null;
+    const taskId = getTaskIdFromArgs();
     if (!taskId) {
-        console.log("Usage: show_task.ts [taskId]");
+        console.log("エラー: タスクIDを指定してください。");
+        console.log("使用方法: show_task.ts <taskId>");
+        $.exit(1);
         return null;
     }
     try {
@@ -123,19 +134,22 @@ function showTaskMain() {
             }
         }
         if (!targetTask) {
-            console.log(`タスクが見つかりません: ${taskId}`);
+            console.log(`エラー: タスクが見つかりません: ${taskId}`);
+            $.exit(1);
             return null;
         }
         // タスク情報の取得
         const taskInfo = getTaskInfo(targetTask);
         if (!taskInfo) {
-            console.log("タスク情報の取得に失敗しました");
+            console.log("エラー: タスク情報の取得に失敗しました");
+            $.exit(1);
             return null;
         }
         return JSON.stringify(taskInfo, null, 2);
     }
     catch (e) {
-        console.log(`実行エラー: ${e}`);
+        console.error(`実行エラー: ${e}`);
+        $.exit(1);
         return null;
     }
 }

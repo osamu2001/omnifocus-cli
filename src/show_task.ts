@@ -2,6 +2,7 @@
 
 // OmniFocusの型をインポート
 /// <reference path="./types/omnifocus.d.ts" />
+/// <reference path="./types/jxa.d.ts" />
 
 // JXA環境のセットアップ
 ObjC.import('stdlib');
@@ -9,16 +10,38 @@ ObjC.import('Foundation');
 
 function showTaskMain(): string | null {
   /**
+   * タスク詳細情報を表すインターフェース（拡張版）
+   */
+  interface TaskDetailInfo {
+    id: string;
+    name: string;
+    note: string;
+    completed: boolean;
+    flagged: boolean;
+    deferDate: Date | null;
+    dueDate: Date | null;
+    creationDate: Date;
+    modificationDate: Date;
+    completionDate: Date | null;
+    estimatedMinutes: number | null;
+    repetitionRule: any | null;
+    containingProject: { id: string; name: string } | null;
+    containingTask: { id: string; name: string } | null;
+    tags: Array<{ id: string; name: string }>;
+    subtasks: Array<{ id: string; name: string }>;
+  }
+
+  /**
    * タスクの詳細情報を取得する
    * @param task タスクオブジェクト
    * @returns タスク情報のオブジェクト
    */
-  function getTaskInfo(task: OmniFocusTask): TaskInfo | null {
+  function getTaskInfo(task: OmniFocusTask): TaskDetailInfo | null {
     if (!task) return null;
 
     try {
       // 基本的なプロパティを一括で取得
-      const info: TaskInfo = {
+      const info: TaskDetailInfo = {
         id: task.id(),
         name: task.name(),
         note: task.note(),
@@ -33,7 +56,10 @@ function showTaskMain(): string | null {
         repetitionRule: task.repetitionRule(),
         // containingTaskはstring型として定義されているが、実際にはOmniFocusTaskオブジェクトが返されるため、
         // 型の不整合を避けるため直接nullを設定
-        containingTask: null
+        containingTask: null,
+        containingProject: null,
+        tags: [],
+        subtasks: []
       };
 
       // 親プロジェクト情報の取得
@@ -86,26 +112,39 @@ function showTaskMain(): string | null {
   }
 
   /**
-   * コマンドライン引数を取得する
-   * @returns 引数の配列
+   * コマンドライン引数からタスクIDを取得する
+   * @returns タスクID
    */
-  function getCommandLineArguments(): string[] {
-    const args: string[] = [];
-    if (typeof $.NSProcessInfo !== "undefined") {
-      const nsArgs = $.NSProcessInfo.processInfo.arguments;
-      for (let i = 0; i < nsArgs.count; i++) {
-        args.push(ObjC.unwrap<string>(nsArgs.objectAtIndex(i)));
-      }
+  function getTaskIdFromArgs(): string | null {
+    if (typeof $.NSProcessInfo === "undefined") {
+      return null;
     }
-    return args;
+    
+    const nsArgs = $.NSProcessInfo.processInfo.arguments;
+    const allArgs = Array.from({ length: nsArgs.count }, (_, i) => 
+      ObjC.unwrap(nsArgs.objectAtIndex(i)) as string
+    );
+    
+    // スクリプト名を見つける（通常は4番目の引数）
+    // スクリプト名の後の引数がユーザーの実際の引数
+    const scriptNameIndex = Math.min(3, allArgs.length - 1); // 安全のため
+    
+    // スクリプト名の後の引数を返す（あれば）
+    if (scriptNameIndex + 1 < allArgs.length) {
+      const userArgs = allArgs.slice(scriptNameIndex + 1);
+      return userArgs[0] || null; // 最初の引数をタスクIDとして返す
+    }
+    
+    return null;
   }
 
   // メイン処理
-  const args = getCommandLineArguments();
-  const taskId = args[4] || null;
+  const taskId = getTaskIdFromArgs();
   
   if (!taskId) {
-    console.log("Usage: show_task.ts [taskId]");
+    console.log("エラー: タスクIDを指定してください。");
+    console.log("使用方法: show_task.ts <taskId>");
+    $.exit(1);
     return null;
   }
 
@@ -131,20 +170,23 @@ function showTaskMain(): string | null {
     }
 
     if (!targetTask) {
-      console.log(`タスクが見つかりません: ${taskId}`);
+      console.log(`エラー: タスクが見つかりません: ${taskId}`);
+      $.exit(1);
       return null;
     }
 
     // タスク情報の取得
     const taskInfo = getTaskInfo(targetTask);
     if (!taskInfo) {
-      console.log("タスク情報の取得に失敗しました");
+      console.log("エラー: タスク情報の取得に失敗しました");
+      $.exit(1);
       return null;
     }
     
     return JSON.stringify(taskInfo, null, 2);
   } catch (e) {
-    console.log(`実行エラー: ${e}`);
+    console.error(`実行エラー: ${e}`);
+    $.exit(1);
     return null;
   }
 }
