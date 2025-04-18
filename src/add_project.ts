@@ -4,9 +4,9 @@
 ObjC.import('stdlib');
 
 function addProjectMain() {
-  function getCommandLineArguments(): string[] {
+  function getProjectNameFromArgs(): string {
     if (typeof $.NSProcessInfo === "undefined") {
-      return [];
+      return "";
     }
     
     const nsArgs = $.NSProcessInfo.processInfo.arguments;
@@ -20,11 +20,12 @@ function addProjectMain() {
     
     // スクリプト名の後の引数を返す（あれば）
     if (scriptNameIndex + 1 < allArgs.length) {
-      return allArgs.slice(scriptNameIndex + 1);
+      const userArgs = allArgs.slice(scriptNameIndex + 1);
+      return userArgs[userArgs.length - 1]; // 最後の引数をプロジェクト名として返す
     }
     
-    // ユーザー指定の引数がない場合は空配列を返す
-    return [];
+    // ユーザー指定の引数がない場合は空文字列を返す
+    return "";
   }
 
   function addProject(projectName: string): void {
@@ -38,19 +39,11 @@ function addProjectMain() {
     }
   }
 
-  const cliArgs = getCommandLineArguments();
+  const projectName = getProjectNameFromArgs();
   
-  // 引数の最後の要素をプロジェクト名として使用
-  if (cliArgs.length === 0) {
-    // JXA環境では console.error の代わりに console.log を使用
-    console.log("エラー: プロジェクト名を指定してください。");
-    $.exit(1);
-    return;
-  }
-  
-  const projectName = cliArgs[cliArgs.length - 1];
+  // プロジェクト名が空または空白文字のみの場合はエラー
   if (!projectName || projectName.trim() === "") {
-    console.log("エラー: プロジェクト名が空です。");
+    console.log("エラー: プロジェクト名を指定してください。");
     $.exit(1);
     return;
   }
