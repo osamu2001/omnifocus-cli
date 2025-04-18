@@ -5,22 +5,21 @@ ObjC.import('stdlib');
 
 /**
  * 指定したプロジェクトにタスクを追加する
- * @returns 処理結果（JXAは戻り値が標準出力に出力される）
  */
 function projectAddTaskMain() {
   /**
    * コマンドライン引数を取得する
-   * @returns 引数の配列
+   * @returns 必要な引数 [projectID, taskName]
    */
-  function getArgsFromCommandLine(): string[] {
-    const args: string[] = [];
+  function getArgsFromCommandLine(): [string, string] {
     if (typeof $.NSProcessInfo !== "undefined") {
       const nsArgs = $.NSProcessInfo.processInfo.arguments;
-      for (let i = 0; i < nsArgs.count; i++) {
-        args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-      }
+      // osascriptの仕様上、最初の数個の引数は無視して、4番目と5番目の引数を取得
+      const projectID = nsArgs.count > 4 ? ObjC.unwrap(nsArgs.objectAtIndex(4)) as string : '';
+      const taskName = nsArgs.count > 5 ? ObjC.unwrap(nsArgs.objectAtIndex(5)) as string : '';
+      return [projectID, taskName];
     }
-    return args;
+    return ['', ''];
   }
 
   /**
@@ -53,16 +52,10 @@ function projectAddTaskMain() {
   }
 
   // メイン処理開始
-  // コマンドライン引数を取得
-  const args = getArgsFromCommandLine();
-  const scriptName = args[0]?.split('/').pop() || 'project_add_task.ts';
-  
-  // 4番目と5番目の引数を使用（osascriptの仕様上、最初の引数はスクリプト自体）
-  const projectID = args[4];
-  const taskName = args[5];
-  
+  // コマンドライン引数を取得（分割代入を使用）
+  const [projectID, taskName] = getArgsFromCommandLine();
   if (!projectID || !taskName) {
-    console.log(`使用法: ${scriptName} <projectID> <taskName>`);
+    console.log(`使用法: project_add_task <projectID> <taskName>`);
     $.exit(1);
     return null;
   }
