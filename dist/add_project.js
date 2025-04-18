@@ -4,15 +4,12 @@
 ObjC.import('stdlib');
 function addProjectMain() {
     function getCommandLineArguments() {
-        const args = [];
-        if (typeof $.NSProcessInfo !== "undefined") {
-            const nsArgs = $.NSProcessInfo.processInfo.arguments;
-            for (let i = 0; i < nsArgs.count; i++) {
-                args.push(ObjC.unwrap(nsArgs.objectAtIndex(i)));
-            }
-            return args.slice(2);
+        if (typeof $.NSProcessInfo === "undefined") {
+            return [];
         }
-        return args;
+        const nsArgs = $.NSProcessInfo.processInfo.arguments;
+        const args = Array.from({ length: nsArgs.count }, (_, i) => ObjC.unwrap(nsArgs.objectAtIndex(i)));
+        return args.slice(2);
     }
     function addProject(projectName) {
         try {
