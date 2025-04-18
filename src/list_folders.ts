@@ -10,13 +10,13 @@ function listFoldersMain() {
    * @param parentPath 親フォルダのパス
    * @returns フォルダ情報の配列
    */
-  function listFoldersRecursive(folder: any, parentPath: string): string[] {
+  function listFoldersRecursive(folder: OmniFocusFolder, parentPath: string): string[] {
     const results: string[] = [];
     try {
       const currentName = folder.name();
       const currentId = folder.id();
       if (!currentName || !currentId) {
-        console.warn("名前またはIDが取得できないフォルダが見つかりました。スキップします。");
+        console.log("名前またはIDが取得できないフォルダが見つかりました。スキップします。");
         return results;
       }
 
@@ -30,8 +30,9 @@ function listFoldersMain() {
         }
       }
     } catch (e) {
+      // JXA環境ではconsole.errorが未定義の場合があるため、console.logを使用
       const folderNameAttempt = typeof folder?.name === 'function' ? folder.name() : '不明なフォルダ';
-      console.error(`フォルダ "${folderNameAttempt}" の処理中にエラー: ${e}`);
+      console.log(`フォルダ "${folderNameAttempt}" の処理中にエラー: ${e}`);
     }
     return results;
   }
@@ -40,15 +41,46 @@ function listFoldersMain() {
    * OmniFocusアプリケーションのインスタンスを取得する
    * @returns OmniFocusアプリケーションのインスタンス
    */
-  function getOmniFocusApp(): any {
-      try {
-          const app = Application('OmniFocus');
-          app.includeStandardAdditions = true;
-          return app;
-      } catch (e) {
-          console.error("OmniFocus アプリケーションが見つかりません。");
-          throw e;
-      }
+  function getOmniFocusApp(): OmniFocusApplication {
+    try {
+      const app = Application('OmniFocus') as OmniFocusApplication;
+      app.includeStandardAdditions = true;
+      return app;
+    } catch (e) {
+      console.log("OmniFocus アプリケーションが見つかりません。");
+      throw e;
+    }
+  }
+
+  /**
+   * 結果を標準出力に書き込む
+   * @param content 出力する内容
+   */
+  function writeToStdout(content: string): void {
+    try {
+      const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
+      const data = $.NSString.stringWithUTF8String(content).dataUsingEncoding($.NSUTF8StringEncoding);
+      stdout.writeData(data);
+    } catch (e) {
+      console.log(`標準出力への書き込み中にエラーが発生しました: ${e}`);
+      $.exit(1);
+    }
+  }
+
+  /**
+   * エラーメッセージを標準エラー出力に書き込む
+   * @param errorMessage エラーメッセージ
+   */
+  function writeErrorToStderr(errorMessage: string): void {
+    try {
+      const stderr = $.NSFileHandle.fileHandleWithStandardError;
+      const errorData = $.NSString.stringWithUTF8String(`${errorMessage}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
+      stderr.writeData(errorData);
+    } catch (e) {
+      // 標準エラー出力への書き込みに失敗した場合は最後の手段としてconsole.logを使用
+      console.log(`エラー: ${errorMessage}`);
+      console.log(`標準エラー出力への書き込みにも失敗: ${e}`);
+    }
   }
 
   // メイン処理
@@ -68,18 +100,13 @@ function listFoldersMain() {
     }
 
     if (allFolderLines.length > 0) {
-      const resultString = allFolderLines.join("\n");
-
-      const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
-      const data = $.NSString.stringWithUTF8String(resultString).dataUsingEncoding($.NSUTF8StringEncoding);
-      stdout.writeData(data);
+      writeToStdout(allFolderLines.join("\n"));
     } else {
       console.log("処理対象のフォルダがありませんでした。");
     }
   } catch (e) {
-    const stderr = $.NSFileHandle.fileHandleWithStandardError;
-    const errorData = $.NSString.stringWithUTF8String(`スクリプトの実行中に予期せぬエラーが発生しました: ${e}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
-    stderr.writeData(errorData);
+    writeErrorToStderr(`スクリプトの実行中に予期せぬエラーが発生しました: ${e}`);
+    $.exit(1);
   }
 }
 
