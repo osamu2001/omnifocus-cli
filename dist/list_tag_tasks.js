@@ -2,10 +2,13 @@
 "use strict";
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
+/**
+ * 指定されたタグIDに関連するタスクを一覧表示します
+ */
 function listTagTasksMain() {
     /**
      * コマンドライン引数を取得します
-     * @returns {string[]} コマンドライン引数の配列
+     * @returns コマンドライン引数の配列
      */
     function getCommandLineArguments() {
         const args = [];
@@ -18,61 +21,100 @@ function listTagTasksMain() {
         }
         return args;
     }
+    /**
+     * タスクがタグ条件に一致するか確認します
+     */
+    function matchesTagCondition(task, tagId) {
+        try {
+            // タグの取得
+            const tags = task.tags();
+            if (tagId) {
+                // 特定のタグIDを持つタスクをフィルタリング
+                return tags.some(tag => tag.id() === tagId);
+            }
+            else {
+                // タグがないタスクをフィルタリング
+                return tags.length === 0 && typeof task.containingProject === "function";
+            }
+        }
+        catch (e) {
+            // タグ情報が取得できない場合は条件に一致しないとみなす
+            return false;
+        }
+    }
+    /**
+     * タスクが表示条件に一致するか確認します
+     */
+    function isDisplayableTask(task, tagId) {
+        try {
+            // 完了済みのタスクは除外
+            if (task.completed())
+                return false;
+            // 延期されているタスクは除外
+            const deferDate = task.deferDate();
+            if (deferDate && deferDate > new Date())
+                return false;
+            // ブロックされているタスクは除外（オプショナルプロパティのため条件分岐）
+            if (task.blocked && task.blocked())
+                return false;
+            // タグ条件のチェック
+            return matchesTagCondition(task, tagId);
+        }
+        catch (e) {
+            // エラーが発生した場合は安全のためfalseを返す
+            return false;
+        }
+    }
     // メイン処理
     const args = getCommandLineArguments();
     const tagId = args[0];
-    let result = null;
     try {
         const app = Application('OmniFocus');
         app.includeStandardAdditions = true;
         const doc = app.defaultDocument;
         const output = [];
         // インボックスタスクを処理
-        for (const t of doc.inboxTasks()) {
-            try {
-                const tags = (typeof t.tags === "function" && t.tags()) ? t.tags() : [];
-                const deferDate = (typeof t.deferDate === "function") ? t.deferDate() : null;
-                if (!t.completed() &&
-                    (!deferDate || deferDate <= new Date()) &&
-                    (!t.blocked || !t.blocked()) &&
-                    ((tagId && Array.isArray(tags) && tags.some(tag => tag.id() === tagId)) ||
-                        (!tagId &&
-                            Array.isArray(tags) && tags.length === 0 &&
-                            (typeof t.containingProject === "function")))) {
-                    output.push(`${t.id()}\t${t.name()}`);
+        try {
+            const inboxTasks = doc.inboxTasks();
+            for (const task of inboxTasks) {
+                if (isDisplayableTask(task, tagId)) {
+                    output.push(`${task.id()}\t${task.name()}`);
                 }
             }
-            catch (e) { }
+        }
+        catch (e) {
+            console.log(`インボックスタスク取得エラー: ${e}`);
         }
         // プロジェクトタスクを処理
-        const projects = doc.flattenedProjects ? doc.flattenedProjects() : doc.projects();
-        for (const project of projects) {
-            let tasks = [];
-            if (typeof project.flattenedTasks === "function") {
-                tasks = project.flattenedTasks();
-            }
-            else if (typeof project.tasks === "function") {
-                tasks = project.tasks();
-            }
-            for (const t of tasks) {
+        try {
+            // flattenedProjectsがない場合はprojectsにフォールバック
+            const projects = doc.flattenedProjects ? doc.flattenedProjects() : doc.projects();
+            for (const project of projects) {
                 try {
-                    const tags = (typeof t.tags === "function" && t.tags()) ? t.tags() : [];
-                    const deferDate = (typeof t.deferDate === "function") ? t.deferDate() : null;
-                    if (!t.completed() &&
-                        (!deferDate || deferDate <= new Date()) &&
-                        (!t.blocked || !t.blocked()) &&
-                        ((tagId && Array.isArray(tags) && tags.some(tag => tag.id() === tagId)) ||
-                            (!tagId && Array.isArray(tags) && tags.length === 0 && typeof t.containingProject === "function"))) {
-                        output.push(`${t.id()}\t${t.name()}`);
+                    // flattenedTasksがない場合はtasksにフォールバック
+                    const tasks = typeof project.flattenedTasks === "function" ?
+                        project.flattenedTasks() :
+                        typeof project.tasks === "function" ?
+                            project.tasks() : [];
+                    for (const task of tasks) {
+                        if (isDisplayableTask(task, tagId)) {
+                            output.push(`${task.id()}\t${task.name()}`);
+                        }
                     }
                 }
-                catch (e) { }
+                catch (e) {
+                    // 個々のプロジェクト処理エラーは無視して次へ
+                    continue;
+                }
             }
+        }
+        catch (e) {
+            console.log(`プロジェクト一覧取得エラー: ${e}`);
         }
         // 結果の出力
         const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
         if (output.length === 0) {
-            const data = $.NSString.stringWithUTF8String("No incomplete tasks found for this tag.\n").dataUsingEncoding($.NSUTF8StringEncoding);
+            const data = $.NSString.stringWithUTF8String("指定されたタグのタスクが見つかりませんでした\n").dataUsingEncoding($.NSUTF8StringEncoding);
             stdout.writeData(data);
         }
         else {
@@ -82,7 +124,7 @@ function listTagTasksMain() {
     }
     catch (e) {
         const stderr = $.NSFileHandle.fileHandleWithStandardError;
-        const errorData = $.NSString.stringWithUTF8String(`スクリプトの実行中にエラー: ${e}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
+        const errorData = $.NSString.stringWithUTF8String(`実行エラー: ${e}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
         stderr.writeData(errorData);
     }
 }

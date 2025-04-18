@@ -18,33 +18,27 @@ function listAllTasksMain() {
    */
   function getFullFolderPath(folder: any): string {
     if (!folder || typeof folder.name !== 'function') {
-      // console.warn("無効なフォルダオブジェクトが渡されました。"); // デバッグ用
       return "";
     }
     
-    let parent: any;
     try {
-      parent = folder.container();
+      const parent = folder.container();
+      const isParentFolder = parent && typeof parent.class === 'function' && parent.class() === 'folder';
+      
+      if (isParentFolder) {
+        const parentPath = getFullFolderPath(parent); // 再帰的に親パスを取得
+        return parentPath ? `${parentPath}/${folder.name()}` : folder.name();
+      } else {
+        // 親がフォルダでない場合（ルートフォルダなど）は自身の名前のみ返す
+        return folder.name();
+      }
     } catch (e) {
-      // console.warn(`フォルダ "${folder.name()}" のコンテナ取得中にエラー: ${e}`); // デバッグ用
-      parent = null;
-    }
-
-    let isParentFolder = false;
-    try {
-      // 親がドキュメントではなくフォルダかを確認
-      isParentFolder = parent && typeof parent.class === 'function' && parent.class() === 'folder';
-    } catch (e) {
-      // console.warn(`フォルダ "${folder.name()}" の親タイプ確認中にエラー: ${e}`); // デバッグ用
-      isParentFolder = false;
-    }
-
-    if (isParentFolder) {
-      const parentPath = getFullFolderPath(parent); // 再帰的に親パスを取得
-      return parentPath ? `${parentPath}/${folder.name()}` : folder.name();
-    } else {
-      // 親がフォルダでない場合（ルートフォルダなど）は自身の名前のみ返す
-      return folder.name();
+      // コンテナ取得エラーの場合はフォルダ名だけを返す
+      try {
+        return folder.name();
+      } catch {
+        return "";
+      }
     }
   }
 
@@ -77,9 +71,8 @@ function listAllTasksMain() {
           }
         }
       } catch (e) {
-        // 個々のタスク処理中のエラーはログに出力して続行
-        const taskNameAttempt = typeof task?.name === 'function' ? task.name() : '不明なタスク';
-        console.error(`タスク "${taskNameAttempt}" (ID: ${typeof task?.id === 'function' ? task.id() : 'N/A'}) の処理中にエラー: ${e}`);
+        // 重要なエラーではないのでログを出力せず続行
+        continue;
       }
     }
   }
