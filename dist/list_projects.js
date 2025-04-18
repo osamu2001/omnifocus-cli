@@ -44,7 +44,7 @@ function getFullFolderPath(folder) {
         isParentFolder = false;
     }
     if (isParentFolder) {
-        let parentPath = getFullFolderPath(parent);
+        const parentPath = getFullFolderPath(parent);
         try {
             return parentPath ? `${parentPath}/${folder.name()}` : folder.name();
         }
