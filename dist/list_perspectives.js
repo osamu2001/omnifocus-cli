@@ -1,6 +1,10 @@
 #!/usr/bin/osascript -l JavaScript
 "use strict";
 // TypeScriptでJXA用の型を利用
+/**
+ * OmniFocusのパースペクティブ一覧を取得して表示する
+ * 出力形式：ID\t名前
+ */
 function listPerspectivesMain() {
     /**
      * パースペクティブIDからデフォルト名を取得します
@@ -24,32 +28,28 @@ function listPerspectivesMain() {
     const doc = app.defaultDocument;
     const perspectives = doc.perspectives();
     const lines = [];
+    // 各パースペクティブの情報を取得して整形
     perspectives.forEach((p) => {
-        let id, name;
         try {
-            id = p.id();
-            name = p.name();
+            const id = p.id();
+            let name = "";
+            // 名前を取得（エラーが発生する可能性がある）
+            try {
+                name = p.name();
+            }
+            catch (_a) {
+                // 名前が取得できない場合はデフォルト名を使用
+                const defaultName = getDefaultName(id);
+                if (defaultName)
+                    name = defaultName;
+            }
+            // 名前が取得できた場合のみ出力に追加
             if (name && name !== "") {
                 lines.push(`${id}\t${name}`);
             }
-            else {
-                const fixedName = id ? getDefaultName(id) : null;
-                if (fixedName) {
-                    lines.push(`${id}\t${fixedName}`);
-                }
-            }
         }
-        catch (e) {
-            try {
-                const fixedName = id ? getDefaultName(id) : null;
-                id = p.id();
-                if (fixedName) {
-                    lines.push(`${id}\t${fixedName}`);
-                }
-            }
-            catch (e2) {
-                // エラー処理
-            }
+        catch (_b) {
+            // このパースペクティブはスキップ
         }
     });
     return lines.join("\n");
