@@ -109,11 +109,14 @@ function showProjectMain() {
     const safeGetProperty = <T>(obj: any, propertyName: string, defaultValue: T): T => {
       try {
         if (typeof obj[propertyName] === 'function') {
-          return obj[propertyName]() || defaultValue;
+          const result = obj[propertyName]();
+          return (result !== undefined && result !== null) ? result : defaultValue;
         } else {
           return obj[propertyName] || defaultValue;
         }
       } catch (e) {
+        // エラーが発生した場合はデフォルト値を返す
+        console.log(`${propertyName}の取得中にエラーが発生しました: ${e}`);
         return defaultValue;
       }
     };

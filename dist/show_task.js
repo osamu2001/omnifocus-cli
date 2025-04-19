@@ -25,6 +25,22 @@ function showTaskMain() {
     function getTaskInfo(task, app, doc) {
         if (!task)
             return null;
+        // タスクがインボックスタスクかどうかを判定
+        let isInboxTask = false;
+        try {
+            const inboxTasks = doc.inboxTasks();
+            if (inboxTasks && inboxTasks.length > 0) {
+                for (const inboxTask of inboxTasks) {
+                    if (inboxTask.id() === task.id()) {
+                        isInboxTask = true;
+                        break;
+                    }
+                }
+            }
+        }
+        catch (e) {
+            logError(`インボックスタスク判定エラー: ${e}`);
+        }
         try {
             // 基本的なプロパティを一括で取得
             const info = {
@@ -64,31 +80,85 @@ function showTaskMain() {
             }
             // 親タスク情報の取得
             try {
-                // すべてのタスクを調べて、このタスクがサブタスクとして含まれているか確認
-                let parentTaskFound = false;
-                const allTasks = doc.flattenedTasks();
-                const taskId = task.id();
-                for (const potentialParent of allTasks) {
+                // インボックスタスクの場合は親タスクを取得しない
+                if (isInboxTask) {
+                    info.containingTask = null;
+                }
+                else {
+                    // 直接parent()メソッドを使用して試みる
                     try {
-                        const subtasks = potentialParent.tasks();
-                        for (const subtask of subtasks) {
-                            try {
-                                if (subtask.id() === taskId) {
-                                    // 親タスクが見つかった
-                                    info.containingTask = {
-                                        id: potentialParent.id(),
-                                        name: potentialParent.name()
-                                    };
-                                    parentTaskFound = true;
-                                    break;
+                        const parent = task.parent();
+                        if (parent) {
+                            info.containingTask = {
+                                id: parent.id(),
+                                name: parent.name()
+                            };
+                            // 親タスクが見つかったのでループはスキップ
+                        }
+                        else {
+                            // parent()が null を返した場合
+                            info.containingTask = null;
+                            // 代替手段として全タスク検索を実行
+                            let parentTaskFound = false;
+                            const allTasks = doc.flattenedTasks();
+                            const taskId = task.id();
+                            for (const potentialParent of allTasks) {
+                                try {
+                                    const subtasks = potentialParent.tasks();
+                                    for (const subtask of subtasks) {
+                                        try {
+                                            if (subtask.id() === taskId) {
+                                                // 親タスクが見つかった
+                                                info.containingTask = {
+                                                    id: potentialParent.id(),
+                                                    name: potentialParent.name()
+                                                };
+                                                parentTaskFound = true;
+                                                break;
+                                            }
+                                        }
+                                        catch (e) { /* 処理を継続 */ }
+                                    }
+                                    if (parentTaskFound)
+                                        break;
                                 }
+                                catch (e) { /* 処理を継続 */ }
+                            }
+                        }
+                    }
+                    catch (e) {
+                        // parent()メソッドでエラーが発生した場合は代替手段を使用
+                        logError(`親タスク直接取得エラー: ${e}`);
+                        // 代替手段として全タスク検索を実行
+                        let parentTaskFound = false;
+                        const allTasks = doc.flattenedTasks();
+                        const taskId = task.id();
+                        for (const potentialParent of allTasks) {
+                            try {
+                                const subtasks = potentialParent.tasks();
+                                for (const subtask of subtasks) {
+                                    try {
+                                        if (subtask.id() === taskId) {
+                                            // 親タスクが見つかった
+                                            info.containingTask = {
+                                                id: potentialParent.id(),
+                                                name: potentialParent.name()
+                                            };
+                                            parentTaskFound = true;
+                                            break;
+                                        }
+                                    }
+                                    catch (e) { /* 処理を継続 */ }
+                                }
+                                if (parentTaskFound)
+                                    break;
                             }
                             catch (e) { /* 処理を継続 */ }
                         }
-                        if (parentTaskFound)
-                            break;
+                        if (!parentTaskFound) {
+                            info.containingTask = null;
+                        }
                     }
-                    catch (e) { /* 処理を継続 */ }
                 }
             }
             catch (e) {
@@ -112,13 +182,27 @@ function showTaskMain() {
             }
             // サブタスク情報の取得
             try {
-                const subtasks = task.tasks();
-                info.subtasks = [];
-                for (const subtask of subtasks) {
-                    info.subtasks.push({
-                        id: subtask.id(),
-                        name: subtask.name()
-                    });
+                // インボックスタスクの場合は特別な処理
+                if (isInboxTask) {
+                    info.subtasks = [];
+                }
+                else {
+                    const subtasks = task.tasks();
+                    info.subtasks = [];
+                    if (subtasks && subtasks.length > 0) {
+                        for (const subtask of subtasks) {
+                            try {
+                                info.subtasks.push({
+                                    id: subtask.id(),
+                                    name: subtask.name()
+                                });
+                            }
+                            catch (e) {
+                                // 個別のサブタスク処理エラーは無視して次に進む
+                                logError(`個別のサブタスク情報取得エラー: ${e}`);
+                            }
+                        }
+                    }
                 }
             }
             catch (e) {
@@ -127,8 +211,13 @@ function showTaskMain() {
             }
             // ブロック状態の取得
             try {
-                // @ts-ignore - OmniFocusの型定義ファイルに存在しない可能性があるプロパティ
-                info.blocked = task.blocked ? task.blocked() : false;
+                // 型定義ファイルに追加したメソッドを使用
+                if (typeof task.blocked === 'function') {
+                    info.blocked = task.blocked();
+                }
+                else {
+                    info.blocked = false;
+                }
             }
             catch (e) {
                 logError(`ブロック状態取得エラー: ${e}`);
@@ -136,8 +225,13 @@ function showTaskMain() {
             }
             // 次のアクション状態
             try {
-                // @ts-ignore - OmniFocusの型定義ファイルに存在しない可能性があるプロパティ
-                info.isNextAction = task.isNextAction ? task.isNextAction() : false;
+                // 型定義ファイルに追加したメソッドを使用
+                if (typeof task.isNextAction === 'function') {
+                    info.isNextAction = task.isNextAction();
+                }
+                else {
+                    info.isNextAction = false;
+                }
             }
             catch (e) {
                 logError(`次のアクション状態取得エラー: ${e}`);
@@ -145,8 +239,13 @@ function showTaskMain() {
             }
             // 有効な期限（継承される期限を含む）
             try {
-                // @ts-ignore - OmniFocusの型定義ファイルに存在しない可能性があるプロパティ
-                info.effectiveDueDate = task.effectiveDueDate ? task.effectiveDueDate() : task.dueDate();
+                // 型定義ファイルに定義されているメソッドを使用
+                if (typeof task.effectiveDueDate === 'function') {
+                    info.effectiveDueDate = task.effectiveDueDate();
+                }
+                else {
+                    info.effectiveDueDate = task.dueDate();
+                }
             }
             catch (e) {
                 logError(`有効期限取得エラー: ${e}`);

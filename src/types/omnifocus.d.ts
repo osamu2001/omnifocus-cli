@@ -299,6 +299,10 @@ declare interface OmniFocusTask {
   estimatedMinutes(): number | null;
   /** タスクの繰り返しルールを取得 */
   repetitionRule(): RepetitionRule | null;
+  /** タスクがブロックされているかを取得 */
+  blocked(): boolean;
+  /** タスクが次のアクションかどうかを取得 */
+  isNextAction(): boolean;
   /** タスクの完了状態を設定 */
   markComplete(flag: boolean): void;
   /** タスクにフラグを設定 */
