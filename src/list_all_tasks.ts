@@ -86,7 +86,12 @@ const listAllTasksMain = (): void => {
       
       if (!projectName || projectName.trim() === "") return false;
 
-      if (status === "completed" || status === "dropped" || status === "done status" || status === "inactive") {
+      if (status === "completed" || status === "dropped") {
+        return false;
+      }
+      
+      // "done status"や"inactive"はOmniFocusの型定義にはないが、念のため追加チェック
+      if (typeof status === "string" && (status.includes("done") || status.includes("inactive"))) {
         return false;
       }
 

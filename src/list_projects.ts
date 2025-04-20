@@ -65,7 +65,12 @@ const listProjectsMain = (): string => {
     for (const project of projects) {
       try {
         const status = project.status();
-        if (status === "completed" || status === "dropped" || status === "done status") {
+        if (status === "completed" || status === "dropped") {
+          continue;
+        }
+        
+        // "done status"はOmniFocusの型定義にはないが、念のため追加チェック
+        if (typeof status === "string" && status.includes("done")) {
           continue;
         }
         

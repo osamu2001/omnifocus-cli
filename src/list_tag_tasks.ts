@@ -60,7 +60,7 @@ const listTagTasksMain = (): string => {
     }
   };
 
-  const collectMatchingTasks = (tasks: OmniFocusTask[], tagId: string, results: string[]): void => {
+  const collectMatchingTasks = (tasks: ReadonlyArray<OmniFocusTask>, tagId: string, results: string[]): void => {
     for (const task of tasks) {
       try {
         if (isDisplayableTask(task, tagId)) {

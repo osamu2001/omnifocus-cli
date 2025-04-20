@@ -29,7 +29,7 @@ const listProjectTasksMain = (): string | null => {
       }
     }
     
-    const searchFolders = (folders: OmniFocusFolder[]): OmniFocusProject | null => {
+    const searchFolders = (folders: ReadonlyArray<OmniFocusFolder>): OmniFocusProject | null => {
       for (const folder of folders) {
         const projects = folder.projects();
         for (const p of projects) {

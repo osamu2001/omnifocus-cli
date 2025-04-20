@@ -7,14 +7,36 @@
  * OmniFocusアプリケーションを表すインターフェース
  * jxa.d.tsで定義されているApplicationインターフェースを継承し、
  * OmniFocus特有の機能を追加しています
+ * 
+ * 使用例:
+ * ```typescript
+ * // OmniFocusアプリケーションを取得
+ * const app = Application('OmniFocus') as OmniFocusApplication;
+ * app.includeStandardAdditions = true;
+ * 
+ * // アプリケーション情報を表示
+ * console.log(`OmniFocus バージョン: ${app.version()}`);
+ * console.log(`デフォルトドキュメント: ${app.defaultDocument ? 'あり' : 'なし'}`);
+ * ```
  */
 declare interface OmniFocusApplication extends Application {
-  /** デフォルトのドキュメント */
+  /** 
+   * デフォルトのドキュメント
+   * 通常のOmniFocus操作のための主要なアクセスポイント
+   */
   defaultDocument: OmniFocusDocument;
-  /** アプリケーションのバージョンを取得 */
+  
+  /** 
+   * アプリケーションのバージョンを取得
+   * @returns バージョン文字列（例: '4.0.1'）
+   */
   version(): string;
-  /** すべてのウィンドウを取得 */
-  windows(): any[];
+  
+  /** 
+   * すべてのウィンドウを取得
+   * @returns OmniFocusウィンドウの配列
+   */
+  windows(): OmniFocusWindow[];
   
   /**
    * 新しいタスクオブジェクトを作成する
@@ -40,65 +62,125 @@ declare interface OmniFocusApplication extends Application {
 
 /**
  * OmniFocusドキュメントを表すインターフェース
+ * OmniFocus内のドキュメント（データベース）を操作するためのメソッドとプロパティへのアクセスを提供します
+ * 
+ * 使用例:
+ * ```typescript
+ * // ドキュメントを取得して情報を表示
+ * const doc = app.defaultDocument;
+ * console.log(`インボックスタスク数: ${doc.inboxTasks().length}`);
+ * console.log(`すべてのタスク数: ${doc.flattenedTasks().length}`);
+ * 
+ * // 新しいタスクを作成
+ * const newTask = doc.makeTask({name: "新しいタスク", flagged: true});
+ * console.log(`タスクID: ${newTask.id()}`);
+ * ```
  */
 declare interface OmniFocusDocument {
-  /** インボックスタスクを取得 */
+  /**
+   * インボックスタスクを取得または追加します
+   */
   inboxTasks: {
-    (): OmniFocusTask[];
+    /**
+     * インボックスタスクを取得します
+     * @returns インボックス内のタスクの配列
+     */
+    (): TaskCollection;
+    
+    /**
+     * インボックスにタスクを追加します
+     * @param task 追加するタスク
+     */
     push(task: OmniFocusTask): void;
   };
-  /** すべてのフォルダを取得 */
-  folders(): OmniFocusFolder[];
-  /** すべてのフォルダとサブフォルダを取得 */
-  flattenedFolders(): OmniFocusFolder[];
-  /** すべてのタスクを取得 */
-  flattenedTasks(): OmniFocusTask[];
-  /** すべてのプロジェクトを取得 */
-  flattenedProjects(): OmniFocusProject[];
-  /** すべてのタグを取得 */
-  flattenedTags(): OmniFocusTag[];
-  /** すべてのパースペクティブを取得 */
+  
+  /**
+   * すべてのフォルダを取得します（最上位レベルのみ）
+   * @returns フォルダの配列
+   */
+  folders(): FolderCollection;
+  
+  /**
+   * すべてのフォルダとサブフォルダを取得します（フラット化）
+   * @returns すべてのフォルダの配列
+   */
+  flattenedFolders(): FolderCollection;
+  
+  /**
+   * すべてのタスクを取得します（フラット化）
+   * @returns すべてのタスクの配列
+   */
+  flattenedTasks(): TaskCollection;
+  
+  /**
+   * すべてのプロジェクトを取得します（フラット化）
+   * @returns すべてのプロジェクトの配列
+   */
+  flattenedProjects(): ProjectCollection;
+  
+  /**
+   * すべてのタグを取得します（フラット化）
+   * @returns すべてのタグの配列
+   */
+  flattenedTags(): TagCollection;
+  
+  /**
+   * すべてのパースペクティブを取得します
+   * @returns パースペクティブの配列
+   */
   perspectives(): OmniFocusPerspective[];
-  /** すべてのプロジェクトを取得（非フラット化） */
+  
+  /**
+   * すべてのプロジェクトを取得または追加します（最上位レベルのみ）
+   */
   projects: {
-    (): OmniFocusProject[];
+    /**
+     * すべてのプロジェクトを取得します（最上位レベルのみ）
+     * @returns プロジェクトの配列
+     */
+    (): ProjectCollection;
+    
+    /**
+     * プロジェクトを追加します
+     * @param project 追加するプロジェクト
+     */
     push(project: OmniFocusProject): void;
   };
   
   /**
-   * 新しいタスクを作成する
+   * 新しいタスクを作成します
    * @param properties タスクのプロパティ
    * @returns 作成されたタスク
    */
   makeTask(properties: TaskProperties): OmniFocusTask;
   
   /**
-   * 新しいプロジェクトを作成する
+   * 新しいプロジェクトを作成します
    * @param properties プロジェクトのプロパティ
    * @returns 作成されたプロジェクト
    */
   makeProject(properties: ProjectProperties): OmniFocusProject;
   
   /**
-   * 新しいフォルダを作成する
+   * 新しいフォルダを作成します
    * @param properties フォルダのプロパティ
    * @returns 作成されたフォルダ
    */
   makeFolder(properties: FolderProperties): OmniFocusFolder;
   
   /**
-   * 新しいタグを作成する
+   * 新しいタグを作成します
    * @param properties タグのプロパティ
    * @returns 作成されたタグ
    */
   makeTag(properties: TagProperties): OmniFocusTag;
   
   /**
-   * 指定した文字列で検索を行う
+   * 指定した文字列で検索を行います
    * @param search 検索文字列
    * @returns 検索結果のタスク
    */
-  search(search: string): OmniFocusTask[];
+  search(search: string): TaskCollection;
 }
 
 /**
@@ -181,97 +263,128 @@ declare interface TagProperties {
 
 /**
  * OmniFocusフォルダを表すインターフェース
+ * OmniFocus内のフォルダを操作するためのメソッドとプロパティへのアクセスを提供します
+ * 
+ * 使用例:
+ * ```typescript
+ * // フォルダを取得して情報を表示
+ * const folder = app.defaultDocument.folders()[0];
+ * console.log(`フォルダ名: ${folder.name()}`);
+ * console.log(`サブフォルダ数: ${folder.folders().length}`);
+ * console.log(`プロジェクト数: ${folder.projects().length}`);
+ * 
+ * // フォルダ内のプロジェクトを一覧表示
+ * folder.projects().forEach(project => {
+ *   console.log(` - ${project.name()}`);
+ * });
+ * ```
  */
-declare interface OmniFocusFolder {
-  /** フォルダのIDを取得 */
-  id(): string;
-  /** フォルダの名前を取得 */
-  name(): string;
-  /** フォルダのサブフォルダを取得 */
-  folders(): OmniFocusFolder[];
-  /** フォルダ内のプロジェクトを取得 */
-  projects(): OmniFocusProject[];
-  /** フォルダの親フォルダを取得 */
+declare interface OmniFocusFolder extends HasIdentifier, HasNotes {
+  /**
+   * フォルダのサブフォルダを取得します
+   * @returns サブフォルダの配列
+   */
+  folders(): FolderCollection;
+  
+  /**
+   * フォルダ内のプロジェクトを取得します
+   * @returns フォルダ内のプロジェクトの配列
+   */
+  projects(): ProjectCollection;
+  
+  /**
+   * フォルダの親フォルダを取得します
+   * @returns 親フォルダ（最上位フォルダの場合はnull）
+   */
   container(): OmniFocusFolder | null;
-  /** フォルダのクラスを取得 */
+  
+  /**
+   * フォルダのクラス名を取得します
+   * @returns クラス名
+   */
   class(): string;
-  /** フォルダの説明を取得 */
-  note(): string;
-  /** フォルダの作成日を取得 */
-  creationDate(): Date;
-  /** フォルダの変更日を取得 */
-  modificationDate(): Date;
 }
 
 /**
  * OmniFocusプロジェクトを表すインターフェース
+ * OmniFocus内のプロジェクトを操作するためのメソッドとプロパティへのアクセスを提供します
+ * 
+ * 使用例:
+ * ```typescript
+ * // プロジェクトを取得して情報を表示
+ * const project = app.defaultDocument.flattenedProjects()[0];
+ * console.log(`プロジェクト名: ${project.name()}`);
+ * console.log(`ステータス: ${project.status()}`);
+ * console.log(`タスク数: ${project.tasks().length}`);
+ * 
+ * // プロジェクト内のタスクを取得
+ * const tasks = project.tasks();
+ * tasks.forEach(task => console.log(` - ${task.name()}`));
+ * ```
  */
-declare interface OmniFocusProject {
-  /** プロジェクトのIDを取得 */
-  id(): string;
-  /** プロジェクトの名前を取得 */
-  name(): string;
-  /** プロジェクトが完了しているかどうかを取得 */
-  completed(): boolean;
-  /** プロジェクトのフォルダを取得 */
+declare interface OmniFocusProject extends HasIdentifier, HasNotes, HasDates, HasTags, HasFlag, Completable {
+  /**
+   * プロジェクトが含まれるフォルダを取得します
+   * @returns プロジェクトのフォルダ（設定されていない場合はnull）
+   */
   folder(): OmniFocusFolder | null;
-  /** プロジェクトのタスクを取得 */
+  
+  /**
+   * プロジェクトのタスクを取得または追加します
+   * @returns プロジェクト内のタスクの配列
+   */
   tasks: {
     (): OmniFocusTask[];
+    /**
+     * プロジェクトに新しいタスクを追加します
+     * @param task 追加するタスク
+     */
     push(task: OmniFocusTask): void;
   };
-  /** プロジェクト内のすべてのタスク（子タスク含む）を取得 */
+  
+  /**
+   * プロジェクト内のすべてのタスク（子タスク含む）を取得します
+   * @returns プロジェクト内のすべてのタスクの配列
+   */
   flattenedTasks?(): OmniFocusTask[];
-  /** プロジェクトのステータスを取得 */
-  status(): string;
-  /** プロジェクトの有効なステータスを取得 */
-  effectiveStatus(): string;
-  /** プロジェクトの説明を取得 */
-  note(): string;
-  /** プロジェクトにフラグが付いているかどうかを取得 */
-  flagged(): boolean;
-  /** プロジェクトの開始日を取得 */
-  deferDate(): Date | null;
-  /** プロジェクトの期限を取得 */
-  dueDate(): Date | null;
-  /** プロジェクトの繰り返しルールを取得 */
+  
+  /**
+   * プロジェクトのステータスを取得します
+   * @returns プロジェクトのステータス（'active'|'onHold'|'completed'|'dropped'）
+   */
+  status(): 'active' | 'onHold' | 'completed' | 'dropped';
+  
+  /**
+   * プロジェクトの有効なステータスを取得します
+   * 親要素の状態なども考慮した実際の有効なステータスを返します
+   * @returns プロジェクトの有効なステータス
+   */
+  effectiveStatus(): 'active' | 'onHold' | 'completed' | 'dropped';
+  
+  /**
+   * プロジェクトの繰り返しルールを取得します
+   * @returns 繰り返しルール（設定されていない場合はnull）
+   */
   repetitionRule(): RepetitionRule | null;
-  /** プロジェクトの作成日を取得 */
-  creationDate(): Date;
-  /** プロジェクトの変更日を取得 */
-  modificationDate(): Date;
-  /** プロジェクトの完了日を取得 */
-  completionDate(): Date | null;
-  /** プロジェクトに添付されているタグを取得 */
-  tags(): OmniFocusTag[];
 }
 
 /**
  * OmniFocusタスクを表すインターフェース
+ * OmniFocus内のタスク（To-Do項目）を操作するためのメソッドとプロパティへのアクセスを提供します
+ * 
+ * 使用例:
+ * ```typescript
+ * // タスクを取得して情報を表示
+ * const task = app.defaultDocument.flattenedTasks()[0];
+ * console.log(`タスク名: ${task.name()}`);
+ * console.log(`期限: ${task.dueDate() ? task.dueDate().toLocaleDateString() : '未設定'}`);
+ * 
+ * // タスクにフラグを付ける
+ * task.markFlagged(true);
+ * ```
  */
-declare interface OmniFocusTask {
-  /** タスクのIDを取得 */
-  id(): string;
-  /** タスクの名前を取得 */
-  name(): string;
-  /** タスクが完了しているかどうかを取得 */
-  completed(): boolean;
-  /** タスクにフラグが付いているかどうかを取得 */
-  flagged(): boolean;
-  /** タスクの期限を取得 */
-  dueDate(): Date | null;
-  /** タスクの開始日を取得 */
-  deferDate(): Date | null;
-  /** タスクの完了日を取得 */
-  completionDate(): Date | null;
-  /** タスクの変更日を取得 */
-  modificationDate(): Date;
-  /** タスクの作成日を取得 */
-  creationDate(): Date;
-  /** タスクの説明を取得 */
-  note(): string;
-  /** タスクに添付されているタグを取得 */
-  tags(): OmniFocusTag[];
+declare interface OmniFocusTask extends HasIdentifier, HasNotes, HasDates, HasTags, HasFlag, Completable {
+  // 基本プロパティはすでに共通インターフェースで定義されているため削除
   /** タスクが属するプロジェクトを取得 */
   project(): OmniFocusProject | null;
   /** タスクが含まれるプロジェクトを取得 */
@@ -309,24 +422,40 @@ declare interface OmniFocusTask {
 
 /**
  * OmniFocusタグを表すインターフェース
+ * OmniFocus内のタグを操作するためのメソッドとプロパティへのアクセスを提供します
+ * 
+ * 使用例:
+ * ```typescript
+ * // タグを取得して情報を表示
+ * const tag = app.defaultDocument.flattenedTags()[0];
+ * console.log(`タグ名: ${tag.name()}`);
+ * console.log(`関連タスク数: ${tag.tasks().length}`);
+ * 
+ * // タグの階層構造を表示
+ * const childTags = tag.children();
+ * childTags.forEach(child => {
+ *   console.log(` - ${child.name()}`);
+ * });
+ * ```
  */
-declare interface OmniFocusTag {
-  /** タグのIDを取得 */
-  id(): string;
-  /** タグの名前を取得 */
-  name(): string;
-  /** タグに関連付けられたタスクを取得 */
-  tasks(): OmniFocusTask[];
-  /** タグの子タグを取得 */
-  children(): OmniFocusTag[];
-  /** タグの親タグを取得 */
-  parent(): OmniFocusTag | null;
-  /** タグの状態（アクティブか非アクティブか）を取得 */
+declare interface OmniFocusTag extends HasIdentifier, HasNotes, Hierarchical<OmniFocusTag> {
+  /**
+   * タグに関連付けられたタスクを取得します
+   * @returns タグが付いたタスクの配列
+   */
+  tasks(): TaskCollection;
+  
+  /**
+   * タグの状態を取得します
+   * @returns タグの状態（'active'または'dropped'）
+   */
   status(): 'active' | 'dropped';
-  /** タグに関連付けられたプロジェクトを取得 */
-  projects(): OmniFocusProject[];
-  /** タグの説明を取得 */
-  note(): string;
+  
+  /**
+   * タグに関連付けられたプロジェクトを取得します
+   * @returns タグが付いたプロジェクトの配列
+   */
+  projects(): ProjectCollection;
 }
 
 /**
@@ -337,6 +466,41 @@ declare interface OmniFocusPerspective {
   id(): string;
   /** パースペクティブの名前を取得 */
   name(): string;
+}
+
+/**
+ * OmniFocusウィンドウを表すインターフェース
+ * OmniFocusアプリケーションのウィンドウを操作するためのメソッドとプロパティへのアクセスを提供します
+ */
+declare interface OmniFocusWindow {
+  /**
+   * ウィンドウの名前を取得します
+   * @returns ウィンドウ名
+   */
+  name(): string;
+  
+  /**
+   * ウィンドウのサイズを取得します
+   * @returns ウィンドウサイズ（{width: number, height: number}形式）
+   */
+  bounds(): { width: number; height: number; x: number; y: number; };
+  
+  /**
+   * ウィンドウが閉じられたかどうかを取得します
+   * @returns 閉じられている場合はtrue
+   */
+  closed(): boolean;
+  
+  /**
+   * ウィンドウが最小化されているかどうかを取得します
+   * @returns 最小化されている場合はtrue
+   */
+  miniaturized(): boolean;
+  
+  /**
+   * ウィンドウを閉じます
+   */
+  close(): void;
 }
 
 /**
