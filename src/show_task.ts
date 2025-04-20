@@ -8,20 +8,15 @@
 ObjC.import('stdlib');
 ObjC.import('Foundation');
 
-function showTaskMain(): string | null {
-  // デバッグモードの有効/無効を制御するフラグ
+const showTaskMain = (): string | null => {
   const DEBUG = false;
 
-  // エラーをログに記録する関数
-  function logError(message: string): void {
+  const logError = (message: string): void => {
     if (DEBUG) {
       console.log(message);
     }
-  }
+  };
 
-  /**
-   * タスク詳細情報を表すインターフェース（拡張版）
-   */
   interface TaskDetailInfo {
     id: string;
     name: string;
@@ -39,22 +34,14 @@ function showTaskMain(): string | null {
     containingTask: { id: string; name: string } | null;
     tags: Array<{ id: string; name: string }>;
     subtasks: Array<{ id: string; name: string }>;
-    blocked: boolean;           // ブロックされているかどうか
-    isNextAction: boolean;      // 次のアクションかどうか
-    effectiveDueDate: Date | null; // 有効な期限
+    blocked: boolean;
+    isNextAction: boolean;
+    effectiveDueDate: Date | null;
   }
 
-  /**
-   * タスクの詳細情報を取得する
-   * @param task タスクオブジェクト
-   * @param app OmniFocusアプリケーションオブジェクト
-   * @param doc OmniFocusドキュメントオブジェクト
-   * @returns タスク情報のオブジェクト
-   */
-  function getTaskInfo(task: OmniFocusTask, app: OmniFocusApplication, doc: any): TaskDetailInfo | null {
+  const getTaskInfo = (task: OmniFocusTask, app: OmniFocusApplication, doc: any): TaskDetailInfo | null => {
     if (!task) return null;
 
-    // タスクがインボックスタスクかどうかを判定
     let isInboxTask = false;
     try {
       const inboxTasks = doc.inboxTasks();
@@ -71,7 +58,6 @@ function showTaskMain(): string | null {
     }
 
     try {
-      // 基本的なプロパティを一括で取得
       const info: TaskDetailInfo = {
         id: task.id(),
         name: task.name(),
@@ -85,8 +71,6 @@ function showTaskMain(): string | null {
         completionDate: task.completionDate(),
         estimatedMinutes: task.estimatedMinutes(),
         repetitionRule: task.repetitionRule(),
-        // containingTaskはstring型として定義されているが、実際にはOmniFocusTaskオブジェクトが返されるため、
-        // 型の不整合を避けるため直接nullを設定
         containingTask: null,
         containingProject: null,
         tags: [],
@@ -96,7 +80,6 @@ function showTaskMain(): string | null {
         effectiveDueDate: null
       };
 
-      // 親プロジェクト情報の取得
       try {
         const containingProject = task.containingProject();
         info.containingProject = containingProject ? {
@@ -108,13 +91,10 @@ function showTaskMain(): string | null {
         info.containingProject = null;
       }
 
-      // 親タスク情報の取得
       try {
-        // インボックスタスクの場合は親タスクを取得しない
         if (isInboxTask) {
           info.containingTask = null;
         } else {
-          // 直接parent()メソッドを使用して試みる
           try {
             const parent = task.parent();
             if (parent) {
@@ -122,12 +102,9 @@ function showTaskMain(): string | null {
                 id: parent.id(),
                 name: parent.name()
               };
-              // 親タスクが見つかったのでループはスキップ
             } else {
-              // parent()が null を返した場合
               info.containingTask = null;
 
-              // 代替手段として全タスク検索を実行
               let parentTaskFound = false;
               const allTasks = doc.flattenedTasks();
               const taskId = task.id();
@@ -138,7 +115,6 @@ function showTaskMain(): string | null {
                   for (const subtask of subtasks) {
                     try {
                       if (subtask.id() === taskId) {
-                        // 親タスクが見つかった
                         info.containingTask = {
                           id: potentialParent.id(),
                           name: potentialParent.name()
@@ -146,18 +122,16 @@ function showTaskMain(): string | null {
                         parentTaskFound = true;
                         break;
                       }
-                    } catch (e) { /* 処理を継続 */ }
+                    } catch (e) { }
                   }
                   
                   if (parentTaskFound) break;
-                } catch (e) { /* 処理を継続 */ }
+                } catch (e) { }
               }
             }
           } catch (e) {
-            // parent()メソッドでエラーが発生した場合は代替手段を使用
             logError(`親タスク直接取得エラー: ${e}`);
             
-            // 代替手段として全タスク検索を実行
             let parentTaskFound = false;
             const allTasks = doc.flattenedTasks();
             const taskId = task.id();
@@ -168,7 +142,6 @@ function showTaskMain(): string | null {
                 for (const subtask of subtasks) {
                   try {
                     if (subtask.id() === taskId) {
-                      // 親タスクが見つかった
                       info.containingTask = {
                         id: potentialParent.id(),
                         name: potentialParent.name()
@@ -176,11 +149,11 @@ function showTaskMain(): string | null {
                       parentTaskFound = true;
                       break;
                     }
-                  } catch (e) { /* 処理を継続 */ }
+                  } catch (e) { }
                 }
                 
                 if (parentTaskFound) break;
-              } catch (e) { /* 処理を継続 */ }
+              } catch (e) { }
             }
             
             if (!parentTaskFound) {
@@ -193,7 +166,6 @@ function showTaskMain(): string | null {
         info.containingTask = null;
       }
 
-      // タグ情報の取得
       try {
         const tags = task.tags();
         info.tags = [];
@@ -208,9 +180,7 @@ function showTaskMain(): string | null {
         info.tags = [];
       }
 
-      // サブタスク情報の取得
       try {
-        // インボックスタスクの場合は特別な処理
         if (isInboxTask) {
           info.subtasks = [];
         } else {
@@ -224,7 +194,6 @@ function showTaskMain(): string | null {
                   name: subtask.name()
                 });
               } catch (e) {
-                // 個別のサブタスク処理エラーは無視して次に進む
                 logError(`個別のサブタスク情報取得エラー: ${e}`);
               }
             }
@@ -235,9 +204,7 @@ function showTaskMain(): string | null {
         info.subtasks = [];
       }
 
-      // ブロック状態の取得
       try {
-        // 型定義ファイルに追加したメソッドを使用
         if (typeof task.blocked === 'function') {
           info.blocked = task.blocked();
         } else {
@@ -248,9 +215,7 @@ function showTaskMain(): string | null {
         info.blocked = false;
       }
 
-      // 次のアクション状態
       try {
-        // 型定義ファイルに追加したメソッドを使用
         if (typeof task.isNextAction === 'function') {
           info.isNextAction = task.isNextAction();
         } else {
@@ -261,9 +226,7 @@ function showTaskMain(): string | null {
         info.isNextAction = false;
       }
 
-      // 有効な期限（継承される期限を含む）
       try {
-        // 型定義ファイルに定義されているメソッドを使用
         if (typeof task.effectiveDueDate === 'function') {
           info.effectiveDueDate = task.effectiveDueDate();
         } else {
@@ -281,10 +244,6 @@ function showTaskMain(): string | null {
     }
   }
 
-  /**
-   * コマンドライン引数からタスクIDを取得する
-   * @returns タスクID
-   */
   function getTaskIdFromArgs(): string | null {
     if (typeof $.NSProcessInfo === "undefined") {
       return null;
@@ -295,20 +254,16 @@ function showTaskMain(): string | null {
       ObjC.unwrap(nsArgs.objectAtIndex(i)) as string
     );
     
-    // スクリプト名を見つける（通常は4番目の引数）
-    // スクリプト名の後の引数がユーザーの実際の引数
-    const scriptNameIndex = Math.min(3, allArgs.length - 1); // 安全のため
+    const scriptNameIndex = Math.min(3, allArgs.length - 1);
     
-    // スクリプト名の後の引数を返す（あれば）
     if (scriptNameIndex + 1 < allArgs.length) {
       const userArgs = allArgs.slice(scriptNameIndex + 1);
-      return userArgs[0] || null; // 最初の引数をタスクIDとして返す
+      return userArgs[0] || null;
     }
     
     return null;
   }
 
-  // メイン処理
   const taskId = getTaskIdFromArgs();
   
   if (!taskId) {
@@ -323,41 +278,35 @@ function showTaskMain(): string | null {
     app.includeStandardAdditions = true;
     const doc = app.defaultDocument;
     
-    // タスクをIDで検索
     let targetTask: OmniFocusTask | null = null;
     
-    try {
-      // 直接IDでタスクを検索する（OmniFocusのバージョンによっては利用可能）
-      // @ts-ignore - OmniFocusの型定義ファイルに存在しない可能性があるメソッド
-      if (doc.taskWithID && typeof doc.taskWithID === 'function') {
-        try {
-          // @ts-ignore
-          targetTask = doc.taskWithID(taskId);
-        } catch (e) {
-          logError(`直接IDでのタスク検索に失敗: ${e}`);
-          // 代替方法にフォールバック
-        }
-      }
-      
-      // 直接検索に失敗した場合や機能が利用できない場合は従来の方法で検索
-      if (!targetTask) {
-        const tasks = doc.flattenedTasks();
-        
-        // for...of構文で検索
-        for (const task of tasks) {
+      try {
+        // @ts-ignore
+        if (doc.taskWithID && typeof doc.taskWithID === 'function') {
           try {
-            if (task.id() === taskId) {
-              targetTask = task;
-              break;
-            }
+            // @ts-ignore
+            targetTask = doc.taskWithID(taskId);
           } catch (e) {
-            // 重要なエラーではないため、ログは非表示にする
+            logError(`直接IDでのタスク検索に失敗: ${e}`);
           }
         }
+        
+        if (!targetTask) {
+          const tasks = doc.flattenedTasks();
+          
+          for (const task of tasks) {
+            try {
+              if (task.id() === taskId) {
+                targetTask = task;
+                break;
+              }
+            } catch (e) {
+            }
+          }
+        }
+      } catch (e) {
+        logError(`タスク検索中にエラーが発生しました: ${e}`);
       }
-    } catch (e) {
-      logError(`タスク検索中にエラーが発生しました: ${e}`);
-    }
 
     if (!targetTask) {
       console.log(`エラー: タスクが見つかりません: ${taskId}`);
@@ -365,7 +314,6 @@ function showTaskMain(): string | null {
       return null;
     }
 
-    // タスク情報の取得
     const taskInfo = getTaskInfo(targetTask, app, doc);
     if (!taskInfo) {
       console.log("エラー: タスク情報の取得に失敗しました");
@@ -379,7 +327,6 @@ function showTaskMain(): string | null {
     $.exit(1);
     return null;
   }
-}
+};
 
-// メイン関数を実行
 showTaskMain();

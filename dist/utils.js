@@ -3,9 +3,7 @@
 /// <reference path="./types/omnifocus.d.ts" />
 /// <reference path="./types/jxa.d.ts" />
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.safeCall = safeCall;
-exports.formatDate = formatDate;
-exports.hasMethod = hasMethod;
+exports.hasMethod = exports.formatDate = exports.safeCall = void 0;
 /**
  * 安全にオブジェクトのメソッドを呼び出す
  * @param obj 対象オブジェクト
@@ -13,7 +11,7 @@ exports.hasMethod = hasMethod;
  * @param defaultValue メソッド呼び出しに失敗した場合のデフォルト値
  * @returns メソッドの戻り値またはデフォルト値
  */
-function safeCall(obj, methodName, defaultValue = null) {
+const safeCall = (obj, methodName, defaultValue = null) => {
     try {
         if (obj && typeof obj[methodName] === 'function') {
             return obj[methodName]();
@@ -23,13 +21,9 @@ function safeCall(obj, methodName, defaultValue = null) {
         console.log(`${methodName}()メソッド呼び出し中にエラー: ${e}`);
     }
     return defaultValue;
-}
-/**
- * 日付文字列をフォーマットする
- * @param date 日付オブジェクト
- * @returns フォーマットされた日付文字列またはnull
- */
-function formatDate(date) {
+};
+exports.safeCall = safeCall;
+const formatDate = (date) => {
     if (!date)
         return null;
     try {
@@ -39,13 +33,9 @@ function formatDate(date) {
         console.log(`日付のフォーマット中にエラー: ${e}`);
         return null;
     }
-}
-/**
- * オブジェクトが特定のメソッドを持っているか確認する
- * @param obj 確認するオブジェクト
- * @param methodName メソッド名
- * @returns メソッドが存在し、関数である場合はtrue
- */
-function hasMethod(obj, methodName) {
+};
+exports.formatDate = formatDate;
+const hasMethod = (obj, methodName) => {
     return obj && typeof obj[methodName] === 'function';
-}
+};
+exports.hasMethod = hasMethod;

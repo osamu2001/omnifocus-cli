@@ -3,14 +3,8 @@
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 
-function listFoldersMain() {
-  /**
-   * フォルダを再帰的にリストアップする関数
-   * @param folder フォルダオブジェクト
-   * @param parentPath 親フォルダのパス
-   * @returns フォルダ情報の配列
-   */
-  function listFoldersRecursive(folder: OmniFocusFolder, parentPath: string): string[] {
+const listFoldersMain = (): void => {
+  const listFoldersRecursive = (folder: OmniFocusFolder, parentPath: string): string[] => {
     const results: string[] = [];
     try {
       const currentName = folder.name();
@@ -30,18 +24,13 @@ function listFoldersMain() {
         }
       }
     } catch (e) {
-      // JXA環境ではconsole.errorが未定義の場合があるため、console.logを使用
       const folderNameAttempt = typeof folder?.name === 'function' ? folder.name() : '不明なフォルダ';
       console.log(`フォルダ "${folderNameAttempt}" の処理中にエラー: ${e}`);
     }
     return results;
-  }
+  };
 
-  /**
-   * OmniFocusアプリケーションのインスタンスを取得する
-   * @returns OmniFocusアプリケーションのインスタンス
-   */
-  function getOmniFocusApp(): OmniFocusApplication {
+  const getOmniFocusApp = (): OmniFocusApplication => {
     try {
       const app = Application('OmniFocus') as OmniFocusApplication;
       app.includeStandardAdditions = true;
@@ -50,13 +39,9 @@ function listFoldersMain() {
       console.log("OmniFocus アプリケーションが見つかりません。");
       throw e;
     }
-  }
+  };
 
-  /**
-   * 結果を標準出力に書き込む
-   * @param content 出力する内容
-   */
-  function writeToStdout(content: string): void {
+  const writeToStdout = (content: string): void => {
     try {
       const stdout = $.NSFileHandle.fileHandleWithStandardOutput;
       const data = $.NSString.stringWithUTF8String(content).dataUsingEncoding($.NSUTF8StringEncoding);
@@ -65,25 +50,19 @@ function listFoldersMain() {
       console.log(`標準出力への書き込み中にエラーが発生しました: ${e}`);
       $.exit(1);
     }
-  }
+  };
 
-  /**
-   * エラーメッセージを標準エラー出力に書き込む
-   * @param errorMessage エラーメッセージ
-   */
-  function writeErrorToStderr(errorMessage: string): void {
+  const writeErrorToStderr = (errorMessage: string): void => {
     try {
       const stderr = $.NSFileHandle.fileHandleWithStandardError;
       const errorData = $.NSString.stringWithUTF8String(`${errorMessage}\n`).dataUsingEncoding($.NSUTF8StringEncoding);
       stderr.writeData(errorData);
     } catch (e) {
-      // 標準エラー出力への書き込みに失敗した場合は最後の手段としてconsole.logを使用
       console.log(`エラー: ${errorMessage}`);
       console.log(`標準エラー出力への書き込みにも失敗: ${e}`);
     }
-  }
+  };
 
-  // メイン処理
   try {
     const app = getOmniFocusApp();
     const doc = app.defaultDocument;
@@ -108,6 +87,6 @@ function listFoldersMain() {
     writeErrorToStderr(`スクリプトの実行中に予期せぬエラーが発生しました: ${e}`);
     $.exit(1);
   }
-}
+};
 
 listFoldersMain();

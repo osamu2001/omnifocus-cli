@@ -6,7 +6,7 @@
  * OmniFocusのインボックスにある未完了タスクを一覧表示する
  */
 
-function listInboxTasksMain() {
+const listInboxTasksMain = (): string => {
   const app = Application('OmniFocus') as OmniFocusApplication;
   app.includeStandardAdditions = true;
 
@@ -20,6 +20,6 @@ function listInboxTasksMain() {
   }
 
   return result.join("\n");
-}
+};
 
 listInboxTasksMain();

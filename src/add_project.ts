@@ -3,8 +3,8 @@
 // TypeScriptでJXA用の型を利用
 ObjC.import('stdlib');
 
-function addProjectMain() {
-  function getProjectNameFromArgs(): string {
+const addProjectMain = () => {
+  const getProjectNameFromArgs = (): string => {
     if (typeof $.NSProcessInfo === "undefined") {
       return "";
     }
@@ -14,21 +14,17 @@ function addProjectMain() {
       ObjC.unwrap(nsArgs.objectAtIndex(i)) as string
     );
     
-    // スクリプト名を見つける（通常は4番目の引数）
-    // スクリプト名の後の引数がユーザーの実際の引数
-    const scriptNameIndex = Math.min(3, allArgs.length - 1); // 安全のため
+    const scriptNameIndex = Math.min(3, allArgs.length - 1);
     
-    // スクリプト名の後の引数を返す（あれば）
     if (scriptNameIndex + 1 < allArgs.length) {
       const userArgs = allArgs.slice(scriptNameIndex + 1);
-      return userArgs[userArgs.length - 1]; // 最後の引数をプロジェクト名として返す
+      return userArgs[userArgs.length - 1];
     }
     
-    // ユーザー指定の引数がない場合は空文字列を返す
     return "";
-  }
+  };
 
-  function addProject(projectName: string): void {
+  const addProject = (projectName: string): void => {
     try {
       const app = Application('OmniFocus');
       app.includeStandardAdditions = true;
@@ -37,11 +33,10 @@ function addProjectMain() {
     } catch (e) {
       console.error(`プロジェクト追加中にエラー: ${e}`);
     }
-  }
+  };
 
   const projectName = getProjectNameFromArgs();
   
-  // プロジェクト名が空または空白文字のみの場合はエラー
   if (!projectName || projectName.trim() === "") {
     console.log("エラー: プロジェクト名を指定してください。");
     $.exit(1);
@@ -49,6 +44,6 @@ function addProjectMain() {
   }
   
   addProject(projectName);
-}
+};
 
 addProjectMain();

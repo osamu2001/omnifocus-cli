@@ -12,25 +12,20 @@
  */
 ObjC.import('stdlib');
 
-function exploreTask() {
+const exploreTask = () => {
   try {
-    // OmniFocusアプリを取得
     const app = Application('OmniFocus');
     app.includeStandardAdditions = true;
     
-    // デフォルトドキュメントを取得
     const doc = app.defaultDocument;
     
-    // タスクを取得（最初に見つかるタスクを使用）
     let task = null;
     
-    // まずインボックスタスクを確認
     const inboxTasks = doc.inboxTasks();
     if (inboxTasks && inboxTasks.length > 0) {
       task = inboxTasks[0];
       console.log(`インボックスタスク名: ${task.name()}`);
     } else {
-      // インボックスタスクがなければ、すべてのタスクから探す
       const allTasks = doc.flattenedTasks();
       if (allTasks && allTasks.length > 0) {
         task = allTasks[0];
@@ -41,14 +36,11 @@ function exploreTask() {
       }
     }
     
-    // タスクのプロパティとメソッドを調査
     console.log("\n--- タスクオブジェクトの調査 ---");
     
-    // タスクオブジェクトの基本メソッド
     console.log(`\nid: ${task.id()}`);
     console.log(`name: ${task.name()}`);
     
-    // 標準的なメソッドの確認
     const methods = [
       'note', 'completed', 'flagged', 'dueDate', 'deferDate', 
       'completionDate', 'creationDate', 'modificationDate', 
@@ -58,7 +50,6 @@ function exploreTask() {
     
     for (const method of methods) {
       try {
-        // TypeScriptではanyを明示的に使用して型安全性の警告を回避
         if (typeof (task as any)[method] === 'function') {
           const result = (task as any)[method]();
           console.log(`${method}: ${result || "空"}`);
@@ -70,10 +61,8 @@ function exploreTask() {
       }
     }
     
-    // 関連オブジェクトを取得するメソッドの確認
     console.log("\n--- 関連オブジェクト取得メソッド ---");
     
-    // プロジェクト
     try {
       const project = task.containingProject();
       console.log(`プロジェクト: ${project ? project.name() : "なし"}`);
@@ -81,7 +70,6 @@ function exploreTask() {
       console.log(`containingProject()メソッドはサポートされていません: ${e}`);
     }
     
-    // 親タスク
     try {
       const parent = task.parent();
       console.log(`親タスク: ${parent ? parent.name() : "なし"}`);
@@ -89,7 +77,6 @@ function exploreTask() {
       console.log(`parent()メソッドはサポートされていません: ${e}`);
     }
     
-    // 子タスク
     try {
       const children = task.children();
       console.log(`子タスク数: ${children ? children.length : 0}`);
@@ -97,7 +84,6 @@ function exploreTask() {
       console.log(`children()メソッドはサポートされていません: ${e}`);
     }
     
-    // タグ
     try {
       const tags = task.tags();
       console.log(`タグ数: ${tags ? tags.length : 0}`);
@@ -105,12 +91,9 @@ function exploreTask() {
       console.log(`tags()メソッドはサポートされていません: ${e}`);
     }
     
-    // プロパティ探索
     console.log("\n--- 使用可能なプロパティ/メソッド ---");
-    // JavaScriptのリフレクションでプロパティやメソッドを探索
     for (const prop in task) {
       try {
-        // TypeScriptではanyを明示的に使用して型安全性の警告を回避
         const value = (task as any)[prop];
         const type = typeof value;
         console.log(`${prop}: ${type}`);
@@ -123,7 +106,7 @@ function exploreTask() {
   } catch (e) {
     return `エラー: ${e}`;
   }
-}
+};
 
 // メイン実行
 const taskExploreResult = exploreTask();
