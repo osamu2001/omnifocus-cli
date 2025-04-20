@@ -528,45 +528,151 @@ declare interface OmniFocusWindow {
 
 /**
  * タスク情報を格納するインターフェース
- * 主にAPI呼び出し結果や出力用
+ * 主にAPI呼び出し結果や出力用として使用され、OmniFocusTaskオブジェクトの主要なプロパティを
+ * シリアライズ可能な形式で提供します
+ * 
+ * 使用例:
+ * ```typescript
+ * // タスク情報をJSON形式で出力
+ * const task = app.defaultDocument.flattenedTasks()[0];
+ * const taskInfo: TaskInfo = {
+ *   id: task.id(),
+ *   name: task.name(),
+ *   completed: task.completed(),
+ *   dueDate: task.dueDate(),
+ *   tags: task.tags().map(tag => ({ id: tag.id(), name: tag.name() }))
+ * };
+ * console.log(JSON.stringify(taskInfo, null, 2));
+ * ```
  */
 declare interface TaskInfo {
+  /** タスクの一意識別子 */
   id?: string;
+  
+  /** タスクの名前 */
   name?: string;
+  
+  /** タスクの説明/ノート */
   note?: string;
+  
+  /** タスクが完了しているかどうか */
   completed?: boolean;
+  
+  /** タスクにフラグが付いているかどうか */
   flagged?: boolean;
+  
+  /** タスクの開始日 */
   deferDate?: Date | null;
+  
+  /** タスクの期限 */
   dueDate?: Date | null;
+  
+  /** タスクの作成日 */
   creationDate?: Date | null;
+  
+  /** タスクの変更日 */
   modificationDate?: Date | null;
+  
+  /** タスクの完了日 */
   completionDate?: Date | null;
+  
+  /** タスクの予定時間（分） */
   estimatedMinutes?: number | null;
-  repetitionRule?: any;
+  
+  /** タスクの繰り返しルール */
+  repetitionRule?: RepetitionRuleInfo;
+  
+  /** タスクの親タスクの識別子 */
   containingTask?: string | null;
+  
+  /** タスクが属するプロジェクトの情報 */
   containingProject?: {id: string; name: string} | null;
+  
+  /** タスクに付けられたタグの情報 */
   tags?: Array<{id: string; name: string}>;
+  
+  /** タスクのサブタスク（子タスク）の情報 */
   subtasks?: Array<{id: string; name: string}>;
 }
 
 /**
+ * 繰り返しルール情報を格納するインターフェース
+ * RepetitionRuleインターフェースの情報をシリアライズ可能な形式で提供します
+ */
+declare interface RepetitionRuleInfo {
+  /** 繰り返しの種類（固定か浮動か） */
+  method: 'fixed' | 'floating';
+  
+  /** 繰り返しの間隔 */
+  interval: number;
+  
+  /** 繰り返しの単位（日、週、月、年） */
+  unit: 'day' | 'week' | 'month' | 'year';
+}
+
+/**
  * プロジェクト情報を格納するインターフェース
- * 主にAPI呼び出し結果や出力用
+ * 主にAPI呼び出し結果や出力用として使用され、OmniFocusProjectオブジェクトの主要なプロパティを
+ * シリアライズ可能な形式で提供します
+ * 
+ * 使用例:
+ * ```typescript
+ * // プロジェクト情報をJSON形式で出力
+ * const project = app.defaultDocument.flattenedProjects()[0];
+ * const projectInfo: ProjectInfo = {
+ *   id: project.id(),
+ *   name: project.name(),
+ *   status: project.status(),
+ *   completed: project.completed(),
+ *   tasks: project.tasks().map(task => ({ id: task.id(), name: task.name() }))
+ * };
+ * console.log(JSON.stringify(projectInfo, null, 2));
+ * ```
  */
 declare interface ProjectInfo {
+  /** プロジェクトの一意識別子 */
   id?: string;
+  
+  /** プロジェクトの名前 */
   name?: string;
+  
+  /** プロジェクトの説明/ノート */
   note?: string;
+  
+  /** プロジェクトが完了しているかどうか */
   completed?: boolean;
+  
+  /** プロジェクトにフラグが付いているかどうか */
   flagged?: boolean;
-  status?: string;
+  
+  /** 
+   * プロジェクトのステータス
+   * 'active', 'onHold', 'completed', 'dropped'のいずれか 
+   */
+  status?: ProjectStatus | string;
+  
+  /** プロジェクトが含まれるフォルダの情報 */
   folder?: {id: string; name: string; path: string} | null;
+  
+  /** プロジェクト内のタスク情報 */
   tasks?: Array<{id: string; name: string}>;
+  
+  /** プロジェクトの開始日 */
   deferDate?: Date | null;
+  
+  /** プロジェクトの期限 */
   dueDate?: Date | null;
+  
+  /** プロジェクトの作成日 */
   creationDate?: Date | null;
+  
+  /** プロジェクトの変更日 */
   modificationDate?: Date | null;
+  
+  /** プロジェクトの完了日 */
   completionDate?: Date | null;
+  
+  /** プロジェクトに付けられたタグの情報 */
   tags?: Array<{id: string; name: string}>;
 }
 
@@ -574,6 +680,13 @@ declare interface ProjectInfo {
  * 型ガード: オブジェクトがOmniFocusTaskかどうかを判定する
  * @param obj 判定対象のオブジェクト
  * @returns OmniFocusTaskの場合true
+ * 
+ * 使用例:
+ * ```typescript
+ * if (isOmniFocusTask(someObject)) {
+ *   console.log(`タスク名: ${someObject.name()}`);
+ * }
+ * ```
  */
 declare function isOmniFocusTask(obj: any): obj is OmniFocusTask;
 
