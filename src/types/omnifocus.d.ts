@@ -308,7 +308,7 @@ declare interface OmniFocusTask {
   /** タスクにフラグを設定 */
   markFlagged(flag: boolean): void;
   /** タスクがブロックされているかどうかを取得 */
-  blocked?(): boolean;
+  blocked(): boolean;
 }
 
 /**

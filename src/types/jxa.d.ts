@@ -155,7 +155,8 @@ interface FolderParams {
 }
 
 // Applicationのグローバル関数
-declare function Application(name: string): any;
+// 重複を避けるため一時的にコメントアウト
+// declare function Application(name: string): any;
 
 // JXA特有の関数
 declare function delay(seconds: number): void;
