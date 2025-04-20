@@ -5,14 +5,10 @@
 
 /**
  * OmniFocusアプリケーションを表すインターフェース
+ * jxa.d.tsで定義されているApplicationインターフェースを継承し、
+ * OmniFocus特有の機能を追加しています
  */
-declare interface OmniFocusApplication {
-  /** 
-   * 標準追加機能を含めるかどうか
-   * 注: これはJXA環境の一般的な機能ですが、OmniFocusのコードで実際に使用されているため
-   * ここでも定義されています。jxa.d.tsのApplicationインターフェースにも同じプロパティがあります。
-   */
-  includeStandardAdditions: boolean;
+declare interface OmniFocusApplication extends Application {
   /** デフォルトのドキュメント */
   defaultDocument: OmniFocusDocument;
   /** アプリケーションのバージョンを取得 */
@@ -414,3 +410,84 @@ declare function isOmniFocusFolder(obj: any): obj is OmniFocusFolder;
  * @returns OmniFocusTagの場合true
  */
 declare function isOmniFocusTag(obj: any): obj is OmniFocusTag;
+
+/**
+ * OmniFocus名前空間 - OmniFocus特有のユーティリティ型定義
+ * 注: この名前空間はjxa.d.tsから移動してきました
+ */
+declare namespace OmniFocus {
+  // Quick Entry関連
+  interface QuickEntryPanel {
+    /**
+     * Quick Entryパネルが表示されているかどうか
+     */
+    visible: boolean;
+    
+    /**
+     * Quick Entryパネルを開く
+     */
+    open(): void;
+    
+    /**
+     * Quick Entryパネルを保存する
+     */
+    save(): void;
+    
+    /**
+     * Quick Entryパネルを閉じる
+     */
+    close(): void;
+  }
+  
+  // タスク状態変更コマンド
+  interface TaskStatusCommands {
+    /**
+     * タスクやプロジェクトを完了としてマークする
+     * @param tasks 対象のタスクやプロジェクト
+     */
+    markComplete(tasks: any): void;
+    
+    /**
+     * タスクやプロジェクトを未完了としてマークする
+     * @param tasks 対象のタスクやプロジェクト
+     */
+    markIncomplete(tasks: any): void;
+    
+    /**
+     * タスクやプロジェクトを破棄としてマークする
+     * @param tasks 対象のタスクやプロジェクト
+     */
+    markDropped(tasks: any): void;
+  }
+  
+  // ドキュメント操作コマンド
+  interface DocumentCommands {
+    /**
+     * ドキュメントを同期する
+     */
+    synchronize(): void;
+    
+    /**
+     * ドキュメントをアーカイブする
+     * @param destination アーカイブ先のファイルパス
+     * @param compression 圧縮するかどうか（デフォルト: true）
+     * @param summaries サマリーを含めるかどうか（デフォルト: false）
+     */
+    archive(destination: string, compression?: boolean, summaries?: boolean): void;
+    
+    /**
+     * 完了タスクを隠し、インボックスアイテムを処理する
+     */
+    compact(): void;
+    
+    /**
+     * 最後のコマンドを元に戻す
+     */
+    undo(): void;
+    
+    /**
+     * 元に戻したコマンドをやり直す
+     */
+    redo(): void;
+  }
+}
