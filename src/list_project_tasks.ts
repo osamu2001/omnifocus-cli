@@ -62,7 +62,7 @@ const listProjectTasksMain = (): string | null => {
       } catch (e) {
       }
     } else if (typeof project.tasks === "function") {
-      const collectTasksRecursively = (tasks: OmniFocusTask[]): void => {
+      const collectTasksRecursively = (tasks: ReadonlyArray<OmniFocusTask>): void => {
         for (const task of tasks) {
           try {
             if (!task.completed()) {

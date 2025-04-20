@@ -331,10 +331,14 @@ declare interface OmniFocusProject extends HasIdentifier, HasNotes, HasDates, Ha
   
   /**
    * プロジェクトのタスクを取得または追加します
-   * @returns プロジェクト内のタスクの配列
    */
   tasks: {
-    (): OmniFocusTask[];
+    /**
+     * プロジェクト内のタスクを取得します
+     * @returns プロジェクト内のタスクの配列
+     */
+    (): TaskCollection;
+    
     /**
      * プロジェクトに新しいタスクを追加します
      * @param task 追加するタスク
@@ -346,7 +350,7 @@ declare interface OmniFocusProject extends HasIdentifier, HasNotes, HasDates, Ha
    * プロジェクト内のすべてのタスク（子タスク含む）を取得します
    * @returns プロジェクト内のすべてのタスクの配列
    */
-  flattenedTasks?(): OmniFocusTask[];
+  flattenedTasks?(): TaskCollection;
   
   /**
    * プロジェクトのステータスを取得します
@@ -391,13 +395,32 @@ declare interface OmniFocusTask extends HasIdentifier, HasNotes, HasDates, HasTa
   containingProject(): OmniFocusProject | null;
   /** タスクの親タスクを取得 */
   parent(): OmniFocusTask | null;
-  /** タスクの子タスクを取得 */
-  children(): OmniFocusTask[];
-  /** 親タスクを取得（containingTaskとして使用） */
+  /** 
+   * タスクの子タスクを取得します
+   * @returns 子タスクの配列
+   */
+  children(): TaskCollection;
+  
+  /** 
+   * 親タスクを取得（containingTaskとして使用）
+   * @returns 親タスク（存在しない場合はnull） 
+   */
   containingTask(): OmniFocusTask | null;
-  /** 子タスクを取得（tasksとして使用） */
+  
+  /** 
+   * 子タスクを取得または追加します
+   */
   tasks: {
-    (): OmniFocusTask[];
+    /**
+     * 子タスクを取得します
+     * @returns 子タスクの配列
+     */
+    (): TaskCollection;
+    
+    /**
+     * 子タスクを追加します
+     * @param task 追加するタスク
+     */
     push(task: OmniFocusTask): void;
   };
   /** タスクの有効な期限を取得 */
@@ -578,61 +601,92 @@ declare function isOmniFocusTag(obj: any): obj is OmniFocusTag;
 /**
  * OmniFocus名前空間 - OmniFocus特有のユーティリティ型定義
  * 注: この名前空間はjxa.d.tsから移動してきました
+ * 
+ * OmniFocusアプリケーションの様々な機能へのアクセスを提供する型定義です。
+ * Quick Entry、タスク状態変更、ドキュメント操作などの機能を利用できます。
+ * 
+ * 使用例:
+ * ```typescript
+ * // Quick Entryパネルを操作する
+ * const app = Application('OmniFocus') as OmniFocusApplication;
+ * const quickEntry = app.quickEntry;
+ * quickEntry.open();
+ * 
+ * // ドキュメントを同期する
+ * const documentCommands = app.documentCommands;
+ * documentCommands.synchronize();
+ * ```
  */
 declare namespace OmniFocus {
-  // Quick Entry関連
+  /**
+   * Quick Entryパネルを表すインターフェース
+   * クイック入力パネルの表示状態の管理と操作を提供します
+   */
   interface QuickEntryPanel {
     /**
      * Quick Entryパネルが表示されているかどうか
+     * @returns 表示されている場合はtrue
      */
     visible: boolean;
     
     /**
-     * Quick Entryパネルを開く
+     * Quick Entryパネルを開きます
+     * パネルが既に開いている場合は何も起こりません
      */
     open(): void;
     
     /**
-     * Quick Entryパネルを保存する
+     * Quick Entryパネルを保存します
+     * パネルに入力された内容がOmniFocusに追加されます
      */
     save(): void;
     
     /**
-     * Quick Entryパネルを閉じる
+     * Quick Entryパネルを閉じます
+     * 変更内容が保存されずにパネルが閉じられます
      */
     close(): void;
   }
   
-  // タスク状態変更コマンド
+  /**
+   * タスク状態変更コマンドを表すインターフェース
+   * タスクやプロジェクトの完了状態を変更するためのメソッドを提供します
+   */
   interface TaskStatusCommands {
     /**
-     * タスクやプロジェクトを完了としてマークする
-     * @param tasks 対象のタスクやプロジェクト
+     * タスクやプロジェクトを完了としてマークします
+     * @param tasks 対象のタスクやプロジェクト（単一または配列）
      */
-    markComplete(tasks: any): void;
+    markComplete(tasks: OmniFocusTask | OmniFocusProject | ReadonlyArray<OmniFocusTask | OmniFocusProject>): void;
     
     /**
-     * タスクやプロジェクトを未完了としてマークする
-     * @param tasks 対象のタスクやプロジェクト
+     * タスクやプロジェクトを未完了としてマークします
+     * @param tasks 対象のタスクやプロジェクト（単一または配列）
      */
-    markIncomplete(tasks: any): void;
+    markIncomplete(tasks: OmniFocusTask | OmniFocusProject | ReadonlyArray<OmniFocusTask | OmniFocusProject>): void;
     
     /**
-     * タスクやプロジェクトを破棄としてマークする
-     * @param tasks 対象のタスクやプロジェクト
+     * タスクやプロジェクトを破棄としてマークします
+     * @param tasks 対象のタスクやプロジェクト（単一または配列）
      */
-    markDropped(tasks: any): void;
+    markDropped(tasks: OmniFocusTask | OmniFocusProject | ReadonlyArray<OmniFocusTask | OmniFocusProject>): void;
   }
   
-  // ドキュメント操作コマンド
+  /**
+   * ドキュメント操作コマンドを表すインターフェース
+   * OmniFocusデータベースの同期、アーカイブ、整理などの操作を提供します
+   */
   interface DocumentCommands {
     /**
-     * ドキュメントを同期する
+     * ドキュメントを同期します
+     * OmniFocusデータをクラウドまたはローカルデバイス間で同期します
      */
     synchronize(): void;
     
     /**
-     * ドキュメントをアーカイブする
+     * ドキュメントをアーカイブします
+     * 完了したタスクをバックアップファイルに保存します
+     * 
      * @param destination アーカイブ先のファイルパス
      * @param compression 圧縮するかどうか（デフォルト: true）
      * @param summaries サマリーを含めるかどうか（デフォルト: false）
@@ -640,17 +694,18 @@ declare namespace OmniFocus {
     archive(destination: string, compression?: boolean, summaries?: boolean): void;
     
     /**
-     * 完了タスクを隠し、インボックスアイテムを処理する
+     * 完了タスクを隠し、インボックスアイテムを処理します
+     * OmniFocusデータベースを整理します
      */
     compact(): void;
     
     /**
-     * 最後のコマンドを元に戻す
+     * 最後のコマンドを元に戻します
      */
     undo(): void;
     
     /**
-     * 元に戻したコマンドをやり直す
+     * 元に戻したコマンドをやり直します
      */
     redo(): void;
   }

@@ -40,7 +40,7 @@ const listAllTasksMain = (): void => {
     }
   };
 
-  const collectIncompleteTasksRecursive = (tasks: OmniFocusTask[], parentPath: string, outputArray: string[]): void => {
+  const collectIncompleteTasksRecursive = (tasks: ReadonlyArray<OmniFocusTask>, parentPath: string, outputArray: string[]): void => {
     if (!tasks || tasks.length === 0) {
       return;
     }
