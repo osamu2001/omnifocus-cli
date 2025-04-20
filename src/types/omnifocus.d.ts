@@ -1,10 +1,17 @@
+// filepath: /Users/osamu/ghq/github.com/osamu2001/omnifocus-cli/src/types/omnifocus.d.ts
 // OmniFocus APIの型定義
+// このファイルはOmniFocusアプリケーション特有のAPI型定義を含んでいます
+// jxa.d.tsで定義されている基本型を前提としており、両方のファイルは相互に関連しています
 
 /**
  * OmniFocusアプリケーションを表すインターフェース
  */
 declare interface OmniFocusApplication {
-  /** 標準追加機能を含めるかどうか */
+  /** 
+   * 標準追加機能を含めるかどうか
+   * 注: これはJXA環境の一般的な機能ですが、OmniFocusのコードで実際に使用されているため
+   * ここでも定義されています。jxa.d.tsのApplicationインターフェースにも同じプロパティがあります。
+   */
   includeStandardAdditions: boolean;
   /** デフォルトのドキュメント */
   defaultDocument: OmniFocusDocument;

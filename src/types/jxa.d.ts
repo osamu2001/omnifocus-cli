@@ -1,3 +1,8 @@
+// filepath: /Users/osamu/ghq/github.com/osamu2001/omnifocus-cli/src/types/jxa.d.ts
+// JXA（JavaScript for Automation）環境の基本型定義
+// このファイルはmacOS上でJavaScriptを使用して自動化する際の基本的な型を定義しています
+// omnifocus.d.tsはこのファイルで定義された基本型を前提としています
+
 // JXA環境のグローバル変数の型定義
 declare const ObjC: {
   /**
@@ -159,6 +164,8 @@ declare function Application(name: string): any;
 declare function Application<T>(name: string): T & StandardAdditions;
 
 // Application関数の型を拡張
+// 注: これはOmniFocusアプリケーションに特化した型定義を含んでいます
+// 将来的には各アプリケーション固有の型定義はそれぞれのd.tsファイルに移動すべきかもしれません
 interface ApplicationFunction {
   (name: 'OmniFocus'): OmniFocusApplication;
   (name: string): any;
@@ -184,6 +191,8 @@ interface Application {
   frontmost(): boolean;
   
   // StandardAdditionsを含める設定
+  // 注: OmniFocusアプリケーションインターフェースにも同じプロパティが定義されていますが、
+  // これはJXA環境の一般的な機能であり、各アプリケーションで共通して使用されます
   includeStandardAdditions: boolean;
 }
 
@@ -192,6 +201,8 @@ declare function delay(seconds: number): void;
 declare function Path(path: string): string;
 
 // OmniFocus特有の型定義
+// 注: これらの型定義は本来omnifocus.d.tsに属するかもしれませんが、
+// 現在のコードベースでは両方のファイル間に相互依存関係があります
 declare namespace OmniFocus {
   // Quick Entry関連
   interface QuickEntryPanel {
