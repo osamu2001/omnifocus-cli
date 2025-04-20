@@ -12,13 +12,6 @@ declare interface OmniFocusApplication {
   version(): string;
   /** すべてのウィンドウを取得 */
   windows(): any[];
-  // 標準追加機能が有効な場合のメソッド
-  displayDialog?: (text: string, params?: DialogParams) => DialogResult;
-  displayAlert?: (text: string, params?: AlertParams) => AlertResult;
-  chooseFile?: (params?: FileParams) => string;
-  chooseFolder?: (params?: FolderParams) => string;
-  setClipboard?: (text: string) => void;
-  clipboard?: () => string;
   
   /**
    * 新しいタスクオブジェクトを作成する
@@ -386,15 +379,6 @@ declare interface ProjectInfo {
   completionDate?: Date | null;
   tags?: Array<{id: string; name: string}>;
 }
-
-// Application関数の型を拡張
-interface ApplicationFunction {
-  (name: 'OmniFocus'): OmniFocusApplication;
-  (name: string): any;
-}
-
-// グローバルのApplication関数の型を上書き
-declare const Application: ApplicationFunction;
 
 /**
  * 型ガード: オブジェクトがOmniFocusTaskかどうかを判定する

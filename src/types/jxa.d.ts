@@ -155,9 +155,116 @@ interface FolderParams {
 }
 
 // Applicationのグローバル関数
-// 重複を避けるため一時的にコメントアウト
-// declare function Application(name: string): any;
+declare function Application(name: string): any;
+declare function Application<T>(name: string): T & StandardAdditions;
+
+// Application関数の型を拡張
+interface ApplicationFunction {
+  (name: 'OmniFocus'): OmniFocusApplication;
+  (name: string): any;
+}
+
+// Application関連のインターフェース
+interface Application {
+  /**
+   * アプリケーションが終了するまで待機する
+   */
+  wait(): void;
+  
+  /**
+   * アプリケーションをアクティブにする
+   */
+  activate(): void;
+  
+  /**
+   * アプリケーションの情報を取得
+   */
+  name(): string;
+  version(): string;
+  frontmost(): boolean;
+  
+  // StandardAdditionsを含める設定
+  includeStandardAdditions: boolean;
+}
 
 // JXA特有の関数
 declare function delay(seconds: number): void;
 declare function Path(path: string): string;
+
+// OmniFocus特有の型定義
+declare namespace OmniFocus {
+  // Quick Entry関連
+  interface QuickEntryPanel {
+    /**
+     * Quick Entryパネルが表示されているかどうか
+     */
+    visible: boolean;
+    
+    /**
+     * Quick Entryパネルを開く
+     */
+    open(): void;
+    
+    /**
+     * Quick Entryパネルを保存する
+     */
+    save(): void;
+    
+    /**
+     * Quick Entryパネルを閉じる
+     */
+    close(): void;
+  }
+  
+  // タスク状態変更コマンド
+  interface TaskStatusCommands {
+    /**
+     * タスクやプロジェクトを完了としてマークする
+     * @param tasks 対象のタスクやプロジェクト
+     */
+    markComplete(tasks: any): void;
+    
+    /**
+     * タスクやプロジェクトを未完了としてマークする
+     * @param tasks 対象のタスクやプロジェクト
+     */
+    markIncomplete(tasks: any): void;
+    
+    /**
+     * タスクやプロジェクトを破棄としてマークする
+     * @param tasks 対象のタスクやプロジェクト
+     */
+    markDropped(tasks: any): void;
+  }
+  
+  // ドキュメント操作コマンド
+  interface DocumentCommands {
+    /**
+     * ドキュメントを同期する
+     */
+    synchronize(): void;
+    
+    /**
+     * ドキュメントをアーカイブする
+     * @param destination アーカイブ先のファイルパス
+     * @param compression 圧縮するかどうか（デフォルト: true）
+     * @param summaries サマリーを含めるかどうか（デフォルト: false）
+     */
+    archive(destination: string, compression?: boolean, summaries?: boolean): void;
+    
+    /**
+     * 完了タスクを隠し、インボックスアイテムを処理する
+     */
+    compact(): void;
+    
+    /**
+     * 最後のコマンドを元に戻す
+     */
+    undo(): void;
+    
+    /**
+     * 元に戻したコマンドをやり直す
+     */
+    redo(): void;
+  }
+}
