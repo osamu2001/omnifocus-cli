@@ -71,10 +71,17 @@ const listForecastMain = (): string => {
     
     for (const dateStr of sortedDates) {
       const tasksForDate = dateTasks[dateStr];
-      // 日付の表示形式を整える (YYYY-MM-DD -> YYYY/MM/DD)
-      const formattedDate = dateStr.replace(/-/g, '/');
       
       for (const task of tasksForDate) {
+        // 日付と時間を「YYYY-MM-DD HH:MM」形式で整形
+        const taskDate = new Date(task.date);
+        const year = taskDate.getFullYear();
+        const month = String(taskDate.getMonth() + 1).padStart(2, '0');
+        const day = String(taskDate.getDate()).padStart(2, '0');
+        const hours = String(taskDate.getHours()).padStart(2, '0');
+        const minutes = String(taskDate.getMinutes()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}`;
+        
         // タスクID、日付、タスク種別、タスク名を出力
         result.push(`${task.id}\t${formattedDate}\t${task.dateType}\t${task.name}`);
       }

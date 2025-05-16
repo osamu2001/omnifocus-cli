@@ -95,27 +95,17 @@ const listForecastDetailedMain = (): string => {
     
     for (const dateStr of sortedDates) {
       const tasksForDate = dateTasks[dateStr];
-      // 日付の表示形式を整える (YYYY-MM-DD -> YYYY/MM/DD)
-      const formattedDate = dateStr.replace(/-/g, '/');
       
       // 日付の曜日を取得
       const date = new Date(dateStr);
       const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
       const dayOfWeek = dayNames[date.getDay()];
-      const displayDate = `${formattedDate} (${dayOfWeek})`;
       
-      // 今日と明日は特別な表示にする
+      // 今日と明日の日付文字列
       const todayStr = today.toISOString().split('T')[0];
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
       const tomorrowStr = tomorrow.toISOString().split('T')[0];
-      
-      let dateDisplay = displayDate;
-      if (dateStr === todayStr) {
-        dateDisplay = `今日 (${dayOfWeek})`;
-      } else if (dateStr === tomorrowStr) {
-        dateDisplay = `明日 (${dayOfWeek})`;
-      }
       
       // タスクをソート（フラグ付きを先に、次に日付タイプ、次にプロジェクト名、最後にタスク名）
       tasksForDate.sort((a, b) => {
@@ -129,8 +119,17 @@ const listForecastDetailedMain = (): string => {
       });
       
       for (const task of tasksForDate) {
+        // 日付と時間を「YYYY-MM-DD HH:MM」形式で整形
+        const taskDate = new Date(task.date);
+        const year = taskDate.getFullYear();
+        const month = String(taskDate.getMonth() + 1).padStart(2, '0');
+        const day = String(taskDate.getDate()).padStart(2, '0');
+        const hours = String(taskDate.getHours()).padStart(2, '0');
+        const minutes = String(taskDate.getMinutes()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}`;
+        
         // タスクID、日付、タスク種別、プロジェクト名、フラグ、タスク名を出力
-        result.push(`${task.id}\t${dateDisplay}\t${task.dateType}\t${task.project}\t${task.flagged}${task.name}`);
+        result.push(`${task.id}\t${formattedDate}\t${task.dateType}\t${task.project}\t${task.flagged}${task.name}`);
       }
     }
     
