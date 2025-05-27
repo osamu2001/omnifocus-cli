@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
+    "build": "npm run clean && tsc && npm run build:main-cli",
+    "build:main-cli": "chmod +x dist/omnifocus-cli.js && cp dist/omnifocus-cli.js dist/of",
     "clean": "rm -rf dist",
     "watch": "tsc --watch"
   },
